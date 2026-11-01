@@ -10,12 +10,12 @@ Python (FastAPI) backend.
 
 ## 📁 Project Structure
 
-- [ ] Create root project folder: `imagine/`
-- [ ] Create `frontend/` subfolder for the React app
-- [ ] Create `backend/` subfolder for the FastAPI app
-- [ ] Create a root `README.md` with setup instructions
-- [ ] Create a root `.gitignore` covering Python, Node, and OS files
-- [ ] Initialize a Git repository at the root level
+- [x] Create root project folder: `imagine/`
+- [x] Create `frontend/` subfolder for the React app
+- [x] Create `backend/` subfolder for the FastAPI app
+- [x] Create a root `README.md` with setup instructions
+- [x] Create a root `.gitignore` covering Python, Node, and OS files
+- [x] Initialize a Git repository at the root level
 
 ---
 
