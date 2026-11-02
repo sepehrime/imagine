@@ -22,40 +22,40 @@ Python (FastAPI) backend.
 ## ⚙️ Phase 1: Environment Setup
 
 ### 1.1 Frontend Setup (React + Vite)
-- [ ] Install Node.js (v18+) if not already installed
-- [ ] Scaffold React app with Vite inside `frontend/`: `npm create vite@latest`
-- [ ] Choose React + JavaScript
-- [ ] Install dependencies:
-  - [ ] `react-router-dom` — page routing
-  - [ ] `tailwindcss` + `postcss` + `autoprefixer` — styling
-  - [ ] `framer-motion` — animations and transitions
-  - [ ] `recharts` — loss curve and confidence charts
-  - [ ] `axios` — HTTP requests to the backend
-  - [ ] `lucide-react` — icon library
-  - [ ] `d3` — custom network graph rendering (nodes + edges)
-- [ ] Configure Tailwind CSS (`tailwind.config.js`, `postcss.config.js`)
-- [ ] Set up `vite.config.js` with proxy to backend (`http://localhost:8000`)
-- [ ] Delete Vite boilerplate (default App.css, logo, etc.)
-- [ ] Verify frontend runs: `npm run dev` → `localhost:5173`
+- [x] Install Node.js (v18+) if not already installed
+- [x] Scaffold React app with Vite inside `frontend/`: `npm create vite@latest`
+- [x] Choose React + JavaScript
+- [x] Install dependencies:
+  - [x] `react-router-dom` — page routing
+  - [x] `tailwindcss` + `postcss` + `autoprefixer` — styling
+  - [x] `framer-motion` — animations and transitions
+  - [x] `recharts` — loss curve and confidence charts
+  - [x] `axios` — HTTP requests to the backend
+  - [x] `lucide-react` — icon library
+  - [x] `d3` — custom network graph rendering (nodes + edges)
+- [x] Configure Tailwind CSS (`tailwind.config.js`, `postcss.config.js`)
+- [x] Set up `vite.config.js` with proxy to backend (`http://localhost:8000`)
+- [x] Delete Vite boilerplate (default App.css, logo, etc.)
+- [x] Verify frontend runs: `npm run dev` → `localhost:5173`
 
 ### 1.2 Backend Setup (Python + FastAPI)
-- [ ] Ensure Python 3.10+ is installed
-- [ ] Create a virtual environment inside `backend/`: `python -m venv venv`
-- [ ] Activate virtual environment
-- [ ] Create `requirements.txt` with all dependencies:
-  - [ ] `fastapi` — API framework
-  - [ ] `uvicorn[standard]` — ASGI server to run FastAPI
-  - [ ] `torch` — neural network training and inference
-  - [ ] `numpy` — numerical computation
-  - [ ] `scikit-learn` — dataset generation and preprocessing
-  - [ ] `pydantic` — request/response validation
-  - [ ] `python-multipart` — form data support
-- [ ] Install all requirements: `pip install -r requirements.txt`
-- [ ] Create `main.py` as the FastAPI entry point
-- [ ] Configure CORS middleware to allow requests from `localhost:5173`
-- [ ] Add a `/health` endpoint to verify the backend is running
-- [ ] Verify backend runs: `uvicorn main:app --reload` → `localhost:8000`
-- [ ] Test CORS: confirm frontend can call backend `/health` endpoint
+- [x] Ensure Python 3.10+ is installed
+- [x] Create a virtual environment inside `backend/`: `python -m venv venv`
+- [x] Activate virtual environment
+- [x] Create `requirements.txt` with all dependencies:
+  - [x] `fastapi` — API framework
+  - [x] `uvicorn[standard]` — ASGI server to run FastAPI
+  - [x] `torch` — neural network training and inference
+  - [x] `numpy` — numerical computation
+  - [x] `scikit-learn` — dataset generation and preprocessing
+  - [x] `pydantic` — request/response validation
+  - [x] `python-multipart` — form data support
+- [x] Install all requirements: `pip install -r requirements.txt`
+- [x] Create `main.py` as the FastAPI entry point
+- [x] Configure CORS middleware to allow requests from `localhost:5173`
+- [x] Add a `/health` endpoint to verify the backend is running
+- [x] Verify backend runs: `uvicorn main:app --reload` → `localhost:8000`
+- [x] Test CORS: confirm frontend can call backend `/health` endpoint
 
 ---
 
