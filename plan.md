@@ -62,20 +62,20 @@ Python (FastAPI) backend.
 ## 🎨 Phase 2: Core Layout & Navigation
 
 ### 2.1 Global Layout
-- [ ] Create `src/layouts/MainLayout.jsx` — shared wrapper with header and footer
-- [ ] Build `src/components/Header.jsx`:
-  - [ ] App logo/title: "Inside the Network"
-  - [ ] Navigation links to all 5 sections
-  - [ ] Dark/light mode toggle button
-  - [ ] Mobile hamburger menu for small screens
-- [ ] Build `src/components/Footer.jsx`:
-  - [ ] Short tagline
-  - [ ] Link to Glossary and About page
-- [ ] Implement dark/light mode:
-  - [ ] Use Tailwind's `dark:` variant
-  - [ ] Store user preference in `localStorage`
-  - [ ] Apply `dark` class to `<html>` element on toggle
-- [ ] Make layout fully responsive (mobile, tablet, desktop)
+- [x] Create `src/layouts/MainLayout.jsx` — shared wrapper with header and footer
+- [x] Build `src/components/Header.jsx`:
+  - [x] App logo/title: "Inside the Network"
+  - [x] Navigation links to all 5 sections
+  - [x] Dark/light mode toggle button
+  - [x] Mobile hamburger menu for small screens
+- [x] Build `src/components/Footer.jsx`:
+  - [x] Short tagline
+  - [x] Link to Glossary and About page
+- [x] Implement dark/light mode:
+  - [x] Use Tailwind's `dark:` variant
+  - [x] Store user preference in `localStorage`
+  - [x] Apply `dark` class to `<html>` element on toggle
+- [x] Make layout fully responsive (mobile, tablet, desktop)
 
 ### 2.2 Routing
 - [ ] Set up `src/App.jsx` with React Router `<BrowserRouter>`
