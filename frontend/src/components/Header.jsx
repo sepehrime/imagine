@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Link, NavLink } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import {
   Network,
@@ -18,8 +19,6 @@ import {
 
 /**
  * Single Source of Truth for the 5 curriculum sections.
- * Centralizing route definitions prevents link desynchronization
- * between desktop navigation and mobile navigation.
  */
 export const SECTIONS_NAV = [
   {
@@ -82,8 +81,8 @@ export default function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo & Title */}
           <div className="flex items-center gap-3">
-            <a
-              href="/"
+            <Link
+              to="/"
               className="flex items-center gap-2.5 group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1"
             >
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform duration-200">
@@ -100,17 +99,23 @@ export default function Header() {
                   Visual Neural Network Explorer
                 </span>
               </div>
-            </a>
+            </Link>
           </div>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links (Client-Side Routing) */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-            <a
-              href="/"
-              className="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`
+              }
             >
               Home
-            </a>
+            </NavLink>
 
             {/* Sections Dropdown */}
             <div className="relative" ref={dropdownRef}>
@@ -139,9 +144,9 @@ export default function Header() {
                     {SECTIONS_NAV.map((sec) => {
                       const Icon = sec.icon;
                       return (
-                        <a
+                        <Link
                           key={sec.id}
-                          href={sec.path}
+                          to={sec.path}
                           onClick={() => setSectionsDropdownOpen(false)}
                           className="flex items-start gap-3 px-4 py-3 text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-800/80 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                         >
@@ -154,7 +159,7 @@ export default function Header() {
                               {sec.desc}
                             </div>
                           </div>
-                        </a>
+                        </Link>
                       );
                     })}
                   </div>
@@ -162,24 +167,36 @@ export default function Header() {
               )}
             </div>
 
-            <a
-              href="/glossary"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            <NavLink
+              to="/glossary"
+              className={({ isActive }) =>
+                `flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`
+              }
             >
               <BookOpen className="w-4 h-4 text-emerald-500" />
               <span>Glossary</span>
-            </a>
+            </NavLink>
 
-            <a
-              href="/about"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            <NavLink
+              to="/about"
+              className={({ isActive }) =>
+                `flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-semibold"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`
+              }
             >
               <Info className="w-4 h-4 text-indigo-500" />
               <span>About</span>
-            </a>
+            </NavLink>
           </nav>
 
-          {/* Right Header Actions: Theme Toggle & Mobile Menu Trigger */}
+          {/* Right Header Actions */}
           <div className="flex items-center gap-2">
             {/* Dark / Light Mode Toggle Button */}
             <button
@@ -210,13 +227,13 @@ export default function Header() {
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-slate-200 dark:border-slate-800 py-4 px-2 space-y-1 animate-in slide-in-from-top-4 duration-200">
-            <a
-              href="/"
+            <Link
+              to="/"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Home
-            </a>
+            </Link>
 
             <div className="pt-2 pb-1">
               <span className="px-3 text-xs font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
@@ -226,34 +243,34 @@ export default function Header() {
 
             <div className="grid grid-cols-1 gap-1 pl-2">
               {SECTIONS_NAV.map((sec) => (
-                <a
+                <Link
                   key={sec.id}
-                  href={sec.path}
+                  to={sec.path}
                   onClick={() => setMobileMenuOpen(false)}
                   className="px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400"
                 >
                   {sec.title}
-                </a>
+                </Link>
               ))}
             </div>
 
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1">
-              <a
-                href="/glossary"
+              <Link
+                to="/glossary"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <BookOpen className="w-4 h-4 text-emerald-500" />
                 Glossary
-              </a>
-              <a
-                href="/about"
+              </Link>
+              <Link
+                to="/about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg text-base font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
                 <Info className="w-4 h-4 text-indigo-500" />
                 About
-              </a>
+              </Link>
             </div>
           </div>
         )}

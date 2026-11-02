@@ -30,6 +30,10 @@
    - [3.4 The Theme Provider Pattern & State Encapsulation (`ThemeContext.jsx`)](#34-the-theme-provider-pattern--state-encapsulation-themecontextjsx)
    - [3.5 Single Source of Truth (SSOT) for Navigation Data](#35-single-source-of-truth-ssot-for-navigation-data)
    - [3.6 Event Listeners, React Refs, and Memory Leak Prevention](#36-event-listeners-react-refs-and-memory-leak-prevention)
+   - [3.7 Client-Side Routing (CSR) vs. Server-Side Routing (SSR)](#37-client-side-routing-csr-vs-server-side-routing-ssr)
+   - [3.8 SPA Scroll Restoration Pattern (`ScrollToTop.jsx`)](#38-spa-scroll-restoration-pattern-scrolltotopjsx)
+   - [3.9 Dynamic Flow Pagination & The DRY Principle (`SectionNavFooter.jsx`)](#39-dynamic-flow-pagination--the-dry-principle-sectionnavfooterjsx)
+   - [3.10 Defensive Routing: Catch-All 404 Handlers & Recovery Pathways](#310-defensive-routing-catch-all-404-handlers--recovery-pathways)
 
 ---
 
@@ -215,4 +219,58 @@ In professional engineering, choosing a framework is documented as an **Architec
 
 ---
 
+### 3.7 Client-Side Routing (CSR) vs. Server-Side Routing (SSR)
+* **How Traditional Web Routing Works (SSR):** Clicking an `<a href="/neuron">` tag makes an HTTP request to the web server. The browser destroys the current page in memory, downloads new HTML, CSS, and JS, and rebuilds the DOM from scratch.
+* **How Single Page Applications Work (CSR):** React Router uses the browser's HTML5 History API (`history.pushState` and `popstate` events):
+  ```javascript
+  import { Link, NavLink } from "react-router-dom";
+  ```
+  * `<Link>` and `<NavLink>` intercept click events and prevent the browser's default reload.
+  * The URL bar updates instantly, and React only mounts and unmounts the components matching the new route.
+  * **Benefit:** All in-memory client state, theme state, and loaded scripts remain active without the overhead of network roundtrips or white-screen flashes.
+  * `<NavLink>` exposes an `isActive` callback to apply active navigational indicator classes automatically.
+
+---
+
+### 3.8 SPA Scroll Restoration Pattern (`ScrollToTop.jsx`)
+* **The Problem:** In a multi-page website, moving to a new page naturally starts the viewport at the top `(0, 0)`. In an SPA, because the browser window never actually reloads, navigating from the bottom of Section 1 to Section 2 leaves the user scrolled halfway down the new page!
+* **The SWE Solution:** Create a lightweight, dedicated scroll restoration component that subscribes to router state:
+  ```javascript
+  export default function ScrollToTop() {
+    const { pathname } = useLocation();
+    useEffect(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }, [pathname]);
+    return null;
+  }
+  ```
+  * Mounting `<ScrollToTop />` directly inside `<BrowserRouter>` guarantees every route transition starts with a clean viewport.
+
+---
+
+### 3.9 Dynamic Flow Pagination & The DRY Principle (`SectionNavFooter.jsx`)
+* **The Anti-Pattern:** Hardcoding "Previous" and "Next" buttons inside each individual page view (e.g. `Neuron.jsx` links to `/build`, `Build.jsx` links to `/forward-pass`).
+  * *Why this is fragile:* If you insert a new section, reorder modules, or rename paths, you have to find and modify multiple files, making regressions likely.
+* **The SWE Solution:** Derive pagination dynamically from the centralized `SECTIONS_NAV` array:
+  ```javascript
+  const currentIndex = SECTIONS_NAV.findIndex((s) => s.id === currentSectionId);
+  const prevSection = currentIndex > 0 ? SECTIONS_NAV[currentIndex - 1] : null;
+  const nextSection = currentIndex < SECTIONS_NAV.length - 1 ? SECTIONS_NAV[currentIndex + 1] : null;
+  ```
+  * Individual pages simply declare `<SectionNavFooter currentSectionId={2} />`.
+  * If the curriculum order ever changes, the entire pagination pipeline updates automatically without touching page code (Don't Repeat Yourself).
+
+---
+
+### 3.10 Defensive Routing: Catch-All 404 Handlers & Recovery Pathways
+* **The Principle:** In production web engineering, users may follow stale bookmarks, mistype URLs, or click broken links.
+* **The Pattern:** Always provide a catch-all route at the very end of your `<Routes>` configuration:
+  ```jsx
+  <Route path="*" element={<NotFound />} />
+  ```
+* **UX Engineering:** A 404 page should never be a generic browser error or dead end. It must explain the issue and provide clear, accessible recovery pathways (e.g. "Back to Home", "Start Section 1") to keep the user engaged.
+
+---
+
 *(This document is continuously updated as new features, architectural patterns, and engineering lessons are introduced.)*
+

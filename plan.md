@@ -78,19 +78,19 @@ Python (FastAPI) backend.
 - [x] Make layout fully responsive (mobile, tablet, desktop)
 
 ### 2.2 Routing
-- [ ] Set up `src/App.jsx` with React Router `<BrowserRouter>`
-- [ ] Define routes for:
-  - [ ] `/` — Home / Landing page
-  - [ ] `/neuron` — Section 1: What is a Neuron?
-  - [ ] `/build` — Section 2: Build the Network
-  - [ ] `/forward-pass` — Section 3: Forward Pass
-  - [ ] `/train` — Section 4: Train & Watch it Learn
-  - [ ] `/boundary` — Section 5: Decision Boundary
-  - [ ] `/glossary` — Glossary of Terms
-  - [ ] `/about` — About the App
-- [ ] Add a 404 Not Found page
-- [ ] Add scroll-to-top behavior on route change
-- [ ] Add "Previous" and "Next" section navigation buttons on each page
+- [x] Set up `src/App.jsx` with React Router `<BrowserRouter>`
+- [x] Define routes for:
+  - [x] `/` — Home / Landing page
+  - [x] `/neuron` — Section 1: What is a Neuron?
+  - [x] `/build` — Section 2: Build the Network
+  - [x] `/forward-pass` — Section 3: Forward Pass
+  - [x] `/train` — Section 4: Train & Watch it Learn
+  - [x] `/boundary` — Section 5: Decision Boundary
+  - [x] `/glossary` — Glossary of Terms
+  - [x] `/about` — About the App
+- [x] Add a 404 Not Found page
+- [x] Add scroll-to-top behavior on route change
+- [x] Add "Previous" and "Next" section navigation buttons on each page
 
 ### 2.3 Shared Reusable Components
 - [ ] `src/components/SectionCard.jsx` — card linking to each section

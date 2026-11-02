@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Network, ShieldCheck, BookOpen, Info, Sparkles } from "lucide-react";
 import { SECTIONS_NAV } from "./Header";
 
@@ -8,14 +9,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand & Mission Statement */}
           <div className="md:col-span-2 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
+            <Link to="/" className="inline-flex items-center gap-2 group">
+              <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm group-hover:scale-105 transition-transform">
                 <Network className="w-5 h-5" />
               </div>
               <span className="font-extrabold text-lg text-slate-900 dark:text-white tracking-tight">
                 Inside the Network
               </span>
-            </div>
+            </Link>
             <p className="text-sm text-slate-600 dark:text-slate-400 max-w-sm leading-relaxed">
               An interactive visual explainer that takes you deep inside a neural network.
               Explore how artificial neurons activate, how signals forward-propagate, and how weights adjust during training.
@@ -36,12 +37,12 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               {SECTIONS_NAV.map((sec) => (
                 <li key={sec.id}>
-                  <a
-                    href={sec.path}
+                  <Link
+                    to={sec.path}
                     className="text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
                   >
                     {sec.title}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -54,22 +55,22 @@ export default function Footer() {
             </h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <a
-                  href="/glossary"
+                <Link
+                  to="/glossary"
                   className="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
                   Glossary of Terms
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/about"
+                <Link
+                  to="/about"
                   className="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
                 >
                   <Info className="w-3.5 h-3.5" />
                   About the App
-                </a>
+                </Link>
               </li>
               <li>
                 <a
@@ -86,7 +87,7 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar: Copyright & Attribution */}
+        {/* Bottom Bar */}
         <div className="border-t border-slate-200/80 dark:border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
           <p>© {new Date().getFullYear()} Inside the Network. Educational AI Visualizer.</p>
           <p className="flex items-center gap-1">
