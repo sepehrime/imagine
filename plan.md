@@ -93,19 +93,19 @@ Python (FastAPI) backend.
 - [x] Add "Previous" and "Next" section navigation buttons on each page
 
 ### 2.3 Shared Reusable Components
-- [ ] `src/components/SectionCard.jsx` — card linking to each section
-- [ ] `src/components/ProgressBar.jsx` — shows how far through the journey the user is
-- [ ] `src/components/Tooltip.jsx` — hover tooltip for jargon terms
-- [ ] `src/components/LoadingSpinner.jsx` — shown while API calls are pending
-- [ ] `src/components/ErrorMessage.jsx` — displayed on API failures
-- [ ] `src/components/KeyTakeaway.jsx` — highlighted summary box at section end
-- [ ] `src/components/GlossaryTerm.jsx` — inline term that opens a definition popup
+- [x] `src/components/SectionCard.jsx` — card linking to each section
+- [x] `src/components/ProgressBar.jsx` — shows how far through the journey the user is
+- [x] `src/components/Tooltip.jsx` — hover tooltip for jargon terms
+- [x] `src/components/LoadingSpinner.jsx` — shown while API calls are pending
+- [x] `src/components/ErrorMessage.jsx` — displayed on API failures
+- [x] `src/components/KeyTakeaway.jsx` — highlighted summary box at section end
+- [x] `src/components/GlossaryTerm.jsx` — inline term that opens a definition popup
 
 ### 2.4 Progress Tracking
-- [ ] Store section completion state in `localStorage`
-- [ ] Create `src/hooks/useProgress.js` — custom hook to get/set progress
-- [ ] Show completion indicators on section cards (checkmark, color change)
-- [ ] Show overall progress bar on the Home page
+- [x] Store section completion state in `localStorage`
+- [x] Create `src/hooks/useProgress.js` — custom hook to get/set progress
+- [x] Show completion indicators on section cards (checkmark, color change)
+- [x] Show overall progress bar on the Home page
 
 ---
 

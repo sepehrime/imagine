@@ -34,6 +34,15 @@
    - [3.8 SPA Scroll Restoration Pattern (`ScrollToTop.jsx`)](#38-spa-scroll-restoration-pattern-scrolltotopjsx)
    - [3.9 Dynamic Flow Pagination & The DRY Principle (`SectionNavFooter.jsx`)](#39-dynamic-flow-pagination--the-dry-principle-sectionnavfooterjsx)
    - [3.10 Defensive Routing: Catch-All 404 Handlers & Recovery Pathways](#310-defensive-routing-catch-all-404-handlers--recovery-pathways)
+   - [3.11 Presentational vs. Container Components (Props Down, Events Up)](#311-presentational-vs-container-components-props-down-events-up)
+   - [3.12 Accessibility by Default: WAI-ARIA Roles for Dynamic UI](#312-accessibility-by-default-wai-aria-roles-for-dynamic-ui)
+   - [3.13 Tooltip vs. Popover: Choosing the Right Overlay](#313-tooltip-vs-popover-choosing-the-right-overlay)
+   - [3.14 Designing for Async States Before the API Exists](#314-designing-for-async-states-before-the-api-exists)
+   - [3.15 Custom Hooks as a Storage Abstraction Layer (`useProgress.js`)](#315-custom-hooks-as-a-storage-abstraction-layer-useprogressjs)
+   - [3.16 Never Trust Persisted Data: Validate at Every Boundary](#316-never-trust-persisted-data-validate-at-every-boundary)
+   - [3.17 Cross-Tab Sync & The `storage` Event `null` Bug (Debugging Lesson)](#317-cross-tab-sync--the-storage-event-null-bug-debugging-lesson)
+   - [3.18 Derived State, Functional Updates & Stable Callbacks](#318-derived-state-functional-updates--stable-callbacks)
+   - [3.19 Hook Instances Don't Share State: When to Lift into Context](#319-hook-instances-dont-share-state-when-to-lift-into-context)
 
 ---
 
@@ -269,6 +278,146 @@ In professional engineering, choosing a framework is documented as an **Architec
   <Route path="*" element={<NotFound />} />
   ```
 * **UX Engineering:** A 404 page should never be a generic browser error or dead end. It must explain the issue and provide clear, accessible recovery pathways (e.g. "Back to Home", "Start Section 1") to keep the user engaged.
+
+---
+
+### 3.11 Presentational vs. Container Components (Props Down, Events Up)
+* **Phase:** 2.3 — Shared Reusable Components
+* **The Concept:** Split components into two roles:
+  * **Presentational** (`SectionCard`, `ProgressBar`, `KeyTakeaway`) — receive data through props and render it. They never read `localStorage`, call APIs, or own business state.
+  * **Container** (`Home.jsx`, section pages) — own the state (via `useProgress()`) and pass plain values down.
+  ```jsx
+  // Container decides WHAT; presentational component decides HOW it looks
+  <SectionCard section={sec} isCompleted={isCompleted(sec.id)} />
+  <KeyTakeaway sectionId={1} isCompleted={done} onToggleComplete={toggleCompleted} />
+  ```
+* **Why It Matters:**
+  1. **Reusability:** `ProgressBar` works for curriculum progress today and could show training-epoch progress in Section 4 tomorrow, since it only knows about `percentage`.
+  2. **Testability:** A presentational component is a pure function of its props, so it can be tested without mocking storage or the network.
+  3. **Events Up:** Children never mutate parent state directly. They call a callback (`onToggleComplete`, `onRetry`), and the owner decides what happens.
+* **Sensible Defaults:** Every prop has a default (`percentage = 0`, `onRetry = null`), so the component never crashes when a caller forgets one, and optional features (like the retry button) simply don't render.
+
+---
+
+### 3.12 Accessibility by Default: WAI-ARIA Roles for Dynamic UI
+* **Phase:** 2.3
+* **The Problem:** A sighted user sees a spinner, a red error box, or a filling bar. A screen-reader user sees *nothing* unless the markup tells assistive technology what those elements mean.
+* **The Pattern:** Pick the ARIA role that matches the element's job:
+
+| Component | Role | What a screen reader does |
+| :--- | :--- | :--- |
+| `ProgressBar` | `role="progressbar"` + `aria-valuenow/min/max` | Announces "40 percent" |
+| `LoadingSpinner` | `role="status"` + `sr-only` "Loading..." text | Politely announces the loading state |
+| `ErrorMessage` | `role="alert"` | Interrupts immediately to announce the error |
+| `Tooltip` | `role="tooltip"` | Reads the hint associated with the trigger |
+| `GlossaryTerm` | `<button aria-expanded>` | Announces "collapsed/expanded" |
+
+* **Key Ideas:**
+  * `sr-only` (Tailwind) hides text visually but keeps it in the accessibility tree — icons like `<Loader2>` carry no meaning on their own.
+  * Use real `<button>` elements for interactive triggers: you get keyboard focus, Enter/Space activation, and correct semantics for free. Faking a button with `<span role="button" tabIndex={0}>` requires re-implementing all of that by hand.
+  * Respond to `onFocus`/`onBlur`, not just mouse events, so keyboard users can reach hover content.
+
+---
+
+### 3.13 Tooltip vs. Popover: Choosing the Right Overlay
+* **Phase:** 2.3
+* **The Distinction:**
+  * **Tooltip** (`Tooltip.jsx`) — short, non-interactive hint. Opens on hover/focus, closes on leave/blur, uses `pointer-events-none` so it never blocks clicks.
+  * **Popover** (`GlossaryTerm.jsx`) — contains *interactive* content (a "Glossary" link). It must stay open long enough for the user to move into it and click.
+* **The Close-Behavior Checklist for Popovers:**
+  1. Toggle on click (works on touch devices, which have no hover).
+  2. Close when the mouse leaves the whole wrapper (trigger + popup together, so moving into the popup doesn't close it).
+  3. Close on click outside, via a `mousedown` listener on `document` with a cleanup function (see [3.6](#36-event-listeners-react-refs-and-memory-leak-prevention)).
+* **Lesson from Review:** The first version of `GlossaryTerm` opened on `mouseenter` but only closed on an outside click — hovering across a paragraph left popups stuck open. Every "open" trigger needs a matching "close" trigger.
+
+---
+
+### 3.14 Designing for Async States Before the API Exists
+* **Phase:** 2.3
+* **The Concept:** Every network request has (at least) three UI states: **loading → success** or **loading → error**. Building `LoadingSpinner` and `ErrorMessage` in Phase 2, *before* any API endpoint exists, means Phase 5 can't "forget" the unhappy paths.
+* **Actionable Error Recovery:** A good error message answers three questions:
+  1. *What happened?* — `title` + plain-language `message`
+  2. *Why?* — collapsible `<details>` with technical info, hidden from beginners but available for debugging
+  3. *What can I do?* — an `onRetry` button, so the user recovers without refreshing (which would lose in-memory state like a trained model's UI)
+* **Typical Usage Pattern (Phase 5):**
+  ```jsx
+  if (isLoading) return <LoadingSpinner label="Training network..." />;
+  if (error) return <ErrorMessage message={error.message} details={error.response?.data} onRetry={refetch} />;
+  return <Chart data={data} />;
+  ```
+
+---
+
+### 3.15 Custom Hooks as a Storage Abstraction Layer (`useProgress.js`)
+* **Phase:** 2.4 — Progress Tracking
+* **The Problem:** If six pages each call `localStorage.getItem("inside_network_progress")` and `JSON.parse` directly, the storage key, data format, and error handling get duplicated six times. Changing to a backend database later would mean editing every page.
+* **The Pattern:** Hide storage behind a custom hook that exposes a domain-level API:
+  ```javascript
+  const { isCompleted, toggleCompleted, percentage, resetProgress } = useProgress();
+  ```
+  Pages talk in terms of *sections and completion* — they don't know whether the data lives in `localStorage`, `IndexedDB`, or a server.
+* **Lazy State Initialization:**
+  ```javascript
+  const [completed, setCompleted] = useState(() => readFromStorage());
+  ```
+  Passing a *function* to `useState` runs the (synchronous, relatively slow) storage read only on the first render, not on every re-render.
+* **Defensive Storage Access:** `localStorage` can throw (Safari private mode, storage quota exceeded, disabled cookies). Wrap every read/write in `try/catch` and fall back to an empty state so the app still works — progress just isn't saved.
+
+---
+
+### 3.16 Never Trust Persisted Data: Validate at Every Boundary
+* **Phase:** 2.4
+* **The Concept:** `localStorage` is *external input*, just like an HTTP request body. Users can edit it in DevTools, old app versions may have written a different format, and other tabs can write to it at any time.
+* **The Pattern:** Run every value entering the app through one sanitizer:
+  ```javascript
+  function sanitize(value) {
+    if (!Array.isArray(value)) return [];
+    return value.filter((id) => typeof id === "number" && id >= 1 && id <= TOTAL_SECTIONS);
+  }
+  ```
+* **Lesson from Review:** The initial load path validated data, but the cross-tab sync path accepted raw parsed JSON. Two entry points, one validated — a classic gap. Extracting a single `sanitize()` helper guarantees both paths apply the same rules.
+* **Connection:** This is the frontend twin of Pydantic validation on the backend ([2.2](#22-strict-data-contracts-with-pydantic-type-safety-at-boundaries)) — validate data where it crosses into your code, not deep inside business logic.
+
+---
+
+### 3.17 Cross-Tab Sync & The `storage` Event `null` Bug (Debugging Lesson)
+* **Phase:** 2.4
+* **The Mechanism:** When one tab writes to `localStorage`, the browser fires a `storage` event in **every other tab** of the same origin (never in the tab that made the change). Listening for it keeps open tabs in sync:
+  ```javascript
+  window.addEventListener("storage", (event) => {
+    if (event.key !== STORAGE_KEY) return;
+    ...
+  });
+  ```
+* **The Bug:** The original guard was `if (event.key === STORAGE_KEY && event.newValue)`. But `resetProgress()` calls `localStorage.removeItem()`, and for a removal the event's `newValue` is **`null`**. The falsy check silently ignored resets — other tabs kept showing old progress.
+* **The Fix:** Treat `null` as a meaningful value ("the data was deleted"), not as "nothing to do":
+  ```javascript
+  if (event.newValue === null) { setCompletedSections([]); return; }
+  ```
+* **General Lesson:** Be careful with truthiness checks (`&& value`) when `null`, `0`, or `""` carry meaning. Check for the exact case you mean (`=== null`, `=== undefined`).
+
+---
+
+### 3.18 Derived State, Functional Updates & Stable Callbacks
+* **Phase:** 2.4
+* **Derived State:** `useProgress` stores only one thing — the array of completed IDs. `completedCount`, `percentage`, and `isAllComplete` are *computed* from it on every render:
+  ```javascript
+  const percentage = Math.round((completedSections.length / TOTAL_SECTIONS) * 100);
+  ```
+  Storing `percentage` in its own `useState` would create two sources of truth that can disagree. **Rule:** if a value can be calculated from existing state, calculate it — don't store it.
+* **Functional Updates:** `setCompletedSections((prev) => [...prev, id])` reads the *latest* state instead of a possibly stale value captured in a closure. This matters when updates happen in quick succession or inside callbacks created on an earlier render.
+* **Stable Callbacks with `useCallback`:** `markCompleted` and `toggleCompleted` have an empty dependency list because they only use the functional updater. Their identity never changes, so child components receiving them as props won't re-render or re-run effects needlessly.
+* **Immutability:** Always return a *new* array (`[...prev, id]`, `prev.filter(...)`) — React detects changes by reference, so mutating with `prev.push(id)` would not trigger a re-render.
+
+---
+
+### 3.19 Hook Instances Don't Share State: When to Lift into Context
+* **Phase:** 2.4 — known limitation & future refactor
+* **The Concept:** A custom hook shares *logic*, not *state*. Every component that calls `useProgress()` gets its own independent `useState` copy.
+* **Why It Works Today:** Only one page is mounted at a time (Home *or* a section page), and each one re-reads `localStorage` when it mounts, so progress always appears consistent.
+* **When It Breaks:** If two mounted components call the hook at once (e.g. a progress badge in the persistent `Header` plus the "Mark as Complete" button on a page), clicking the button updates only the page's copy. The header stays stale until reload — and the `storage` event won't help, because it never fires in the same tab.
+* **The Fix When Needed:** Lift the state into a `ProgressProvider` (same pattern as `ThemeContext`, [3.4](#34-the-theme-provider-pattern--state-encapsulation-themecontextjsx)) and have `useProgress()` read from context. One owner, many readers.
+* **SWE Takeaway:** Choose the simplest tool that fits current needs (a hook), but document the conditions that would force an upgrade (a context) so the next developer recognizes the symptom.
 
 ---
 
