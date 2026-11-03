@@ -111,18 +111,18 @@ Python (FastAPI) backend.
 
 ## 🏠 Phase 3: Home / Landing Page
 
-- [ ] Create `src/pages/Home.jsx`
-- [ ] Hero section:
-  - [ ] Bold headline: "See How Neural Networks Think"
-  - [ ] Short subheadline: what the app does, who it's for
-  - [ ] "Start Exploring" CTA button → Section 1
-  - [ ] Animated background: a faint, slowly pulsing neural network
-- [ ] Section overview grid:
-  - [ ] Display all 5 section cards with icon, title, and one-line description
-  - [ ] Show completion badge if section is done
-  - [ ] Highlight the next suggested section
-- [ ] Overall progress bar showing how many sections are completed
-- [ ] "No math degree required" reassurance blurb
+- [x] Create `src/pages/Home.jsx`
+- [x] Hero section:
+  - [x] Bold headline: "See How Neural Networks Think"
+  - [x] Short subheadline: what the app does, who it's for
+  - [x] "Start Exploring" CTA button → Section 1
+  - [x] Animated background: a faint, slowly pulsing neural network
+- [x] Section overview grid:
+  - [x] Display all 5 section cards with icon, title, and one-line description
+  - [x] Show completion badge if section is done
+  - [x] Highlight the next suggested section
+- [x] Overall progress bar showing how many sections are completed
+- [x] "No math degree required" reassurance blurb
 
 ---
 

@@ -43,6 +43,10 @@
    - [3.17 Cross-Tab Sync & The `storage` Event `null` Bug (Debugging Lesson)](#317-cross-tab-sync--the-storage-event-null-bug-debugging-lesson)
    - [3.18 Derived State, Functional Updates & Stable Callbacks](#318-derived-state-functional-updates--stable-callbacks)
    - [3.19 Hook Instances Don't Share State: When to Lift into Context](#319-hook-instances-dont-share-state-when-to-lift-into-context)
+   - [3.20 Gap Analysis: Audit Existing Code Against the Spec Before Building](#320-gap-analysis-audit-existing-code-against-the-spec-before-building)
+   - [3.21 Respecting `prefers-reduced-motion` & Decorative Graphics](#321-respecting-prefers-reduced-motion--decorative-graphics)
+   - [3.22 Precompute Static Data Outside the Component](#322-precompute-static-data-outside-the-component)
+   - [3.23 Isolating Business Rules in Pure Functions (`suggestNextSection`)](#323-isolating-business-rules-in-pure-functions-suggestnextsection)
 
 ---
 
@@ -418,6 +422,77 @@ In professional engineering, choosing a framework is documented as an **Architec
 * **When It Breaks:** If two mounted components call the hook at once (e.g. a progress badge in the persistent `Header` plus the "Mark as Complete" button on a page), clicking the button updates only the page's copy. The header stays stale until reload — and the `storage` event won't help, because it never fires in the same tab.
 * **The Fix When Needed:** Lift the state into a `ProgressProvider` (same pattern as `ThemeContext`, [3.4](#34-the-theme-provider-pattern--state-encapsulation-themecontextjsx)) and have `useProgress()` read from context. One owner, many readers.
 * **SWE Takeaway:** Choose the simplest tool that fits current needs (a hook), but document the conditions that would force an upgrade (a context) so the next developer recognizes the symptom.
+
+---
+
+### 3.20 Gap Analysis: Audit Existing Code Against the Spec Before Building
+* **Phase:** 3 — Home / Landing Page
+* **The Situation:** Phase 3 said "Create `Home.jsx`", but `Home.jsx` already existed with a hero, progress bar, and card grid built during Phase 2.4.
+* **The Practice:** Before writing code, walk the spec line by line and mark each item **done / partial / missing**. Here that left only three real gaps: the animated background, the "next section" highlight, and a dedicated reassurance blurb.
+* **Why It Matters:**
+  1. Avoids rewriting working code (and re-introducing bugs that were already fixed).
+  2. Keeps the plan honest — a parent checkbox should only be ticked when *all* its children are done.
+  3. Turns a vague task ("do Phase 3") into a short, concrete to-do list.
+
+---
+
+### 3.21 Respecting `prefers-reduced-motion` & Decorative Graphics
+* **Phase:** 3
+* **The Concept:** Some users (vestibular disorders, migraines, motion sensitivity) set their OS to reduce motion. Browsers expose this as the CSS media query `prefers-reduced-motion`, and Framer Motion exposes it as a hook:
+  ```javascript
+  const reduceMotion = useReducedMotion();
+  const props = reduceMotion
+    ? { initial: { opacity: 0.4 } }                       // still image
+    : { animate: { opacity: [0.2, 0.75, 0.2] }, transition: { repeat: Infinity } };
+  ```
+* **Decorative vs. Informative Graphics:** The hero network is pure decoration — it carries no information. So it gets:
+  * `aria-hidden="true"` — screen readers skip it (otherwise they'd announce 15 circles and 50 lines).
+  * `pointer-events-none` — it never steals clicks from the CTA button above it.
+  * `z-10` on the text layer — content always paints above decoration.
+* **Motion with Meaning:** Each layer's pulse is delayed by `layer * 0.6s`, so the glow sweeps left → right. Even a background animation can quietly preview the concept taught later (the forward pass).
+
+---
+
+### 3.22 Precompute Static Data Outside the Component
+* **Phase:** 3
+* **The Concept:** The node and edge coordinates of the background network never change. Computing them at **module level** (outside the component function) means they're calculated exactly once when the file is imported:
+  ```javascript
+  const NODES = LAYERS.flatMap(/* ... */);   // runs once at import
+  const EDGES = NODES.flatMap(/* ... */);
+
+  export default function NetworkBackground() { /* just reads NODES/EDGES */ }
+  ```
+* **Decision Guide:**
+
+| Data depends on… | Where to compute it |
+| :--- | :--- |
+| Nothing (constants) | Module level |
+| Props/state, and it's expensive | `useMemo(() => ..., [deps])` |
+| Props/state, and it's cheap | Inline in the render body |
+
+* **Stable Keys:** Each node gets a deterministic `id` like `"2-3"` (layer-index) used as its React `key`, never an array index of a list that can change.
+
+---
+
+### 3.23 Isolating Business Rules in Pure Functions (`suggestNextSection`)
+* **Phase:** 3
+* **The Concept:** "Which section should we suggest next?" is a *business rule*, not a UI concern. It lives in `src/utils/suggestNextSection.js` as a **pure function**: same inputs → same output, no React, no storage, no side effects.
+  ```javascript
+  const suggestedId = suggestNextSection(SECTIONS_NAV, completedSections);
+  <SectionCard isSuggested={sec.id === suggestedId} ... />
+  ```
+* **Why It Matters:**
+  1. **Testability:** Phase 7 can unit-test every progress scenario with plain arrays — no rendering, no mocking `localStorage`.
+  2. **Separation of Concerns:** `SectionCard` only knows "am I suggested?" (a boolean). It doesn't know *why*. The rule can change without touching any component.
+  3. **Explicit "no answer":** Returning `null` (instead of throwing or returning a magic `-1`) gives callers a clear "highlight nothing" case — e.g. when everything is complete.
+* **Design Decision:** Two reasonable rules only differ when a learner skips around:
+  * *First incomplete section* (completed `[1, 3]` → suggest `2`) — fills gaps; fits a sequential curriculum.
+  * *Section after the furthest completed* (completed `[1, 3]` → suggest `4`) — respects the learner's chosen path.
+  * **Chosen:** first incomplete, because each section builds on the previous one. Implemented as a one-liner with `Array.prototype.find`:
+  ```javascript
+  const next = sections.find((section) => !completedIds.includes(section.id));
+  return next ? next.id : null;
+  ```
 
 ---
 

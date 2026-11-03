@@ -1,18 +1,33 @@
 import { Link } from "react-router-dom";
-import { Sparkles, ArrowRight, RotateCcw, Trophy } from "lucide-react";
+import { Sparkles, ArrowRight, RotateCcw, Trophy, GraduationCap } from "lucide-react";
 import { SECTIONS_NAV } from "../components/Header";
 import { useProgress } from "../hooks/useProgress";
 import ProgressBar from "../components/ProgressBar";
 import SectionCard from "../components/SectionCard";
+import NetworkBackground from "../components/NetworkBackground";
+import { suggestNextSection } from "../utils/suggestNextSection";
 
+/**
+ * Home / Landing Page
+ *
+ * SWE Design Patterns applied:
+ * 1. Container Component: owns progress state via `useProgress()` and passes
+ *    plain props (`isCompleted`, `isSuggested`) down to presentational cards.
+ * 2. Business Logic Isolation: "which section is next" lives in a pure helper
+ *    (`suggestNextSection`), not inline in JSX.
+ * 3. Data-Driven Rendering: the grid maps over `SECTIONS_NAV` (SSOT).
+ */
 export default function Home() {
   const {
+    completedSections,
     completedCount,
     totalSections,
     percentage,
     isCompleted,
     resetProgress,
   } = useProgress();
+
+  const suggestedId = suggestNextSection(SECTIONS_NAV, completedSections);
 
   return (
     <div className="space-y-12">
@@ -27,19 +42,23 @@ export default function Home() {
             See How Neural Networks Think
           </h1>
           <p className="text-blue-100 text-base sm:text-lg leading-relaxed">
-            An interactive visual explainer that takes you deep inside the math and mechanics
-            of artificial intelligence. No advanced math degree required.
+            Build, run, and train a real neural network right in your browser, and watch every
+            number move as it learns. Made for curious beginners, students, and developers who
+            want to see what&apos;s actually happening inside AI.
           </p>
           <div className="pt-2 flex flex-wrap items-center gap-4">
             <Link
               to="/neuron"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-blue-700 font-bold text-sm shadow-lg hover:bg-blue-50 transition-all hover:scale-105 active:scale-95"
             >
-              Start Exploring Section 1
+              Start Exploring
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
+
+        {/* Animated network: covers the hero on mobile, sits on the right on desktop */}
+        <NetworkBackground className="absolute inset-0 w-full h-full md:left-auto md:w-1/2 opacity-50 md:opacity-80" />
 
         {/* Decorative background blur */}
         <div className="absolute -right-12 -bottom-12 w-96 h-96 bg-white/10 rounded-full blur-3xl pointer-events-none" />
@@ -105,8 +124,27 @@ export default function Home() {
               key={sec.id}
               section={sec}
               isCompleted={isCompleted(sec.id)}
+              isSuggested={sec.id === suggestedId}
             />
           ))}
+        </div>
+      </section>
+
+      {/* Reassurance Blurb */}
+      <section className="flex flex-col sm:flex-row items-start gap-5 p-6 sm:p-8 rounded-3xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60">
+        <div className="w-12 h-12 shrink-0 rounded-2xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+          <GraduationCap className="w-6 h-6" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            No math degree required
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl">
+            If you can multiply two numbers and add them up, you already know the core math
+            behind a neuron. Every idea here is explained in plain language first, and the
+            sliders, diagrams, and live charts do the heavy lifting. Formulas only show up after
+            you&apos;ve seen what they do, and every piece of jargon has a pop-up definition.
+          </p>
         </div>
       </section>
     </div>

@@ -100,3 +100,6 @@ backend/models/weights/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# Playwright MCP screenshots/logs
+.playwright-mcp/
