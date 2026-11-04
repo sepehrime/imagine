@@ -1,0 +1,58 @@
+import axios from "axios";
+
+/**
+ * API client
+ *
+ * SWE Design Patterns applied:
+ * 1. Single HTTP Gateway: one configured axios instance for the whole app.
+ *    Relative URLs go through Vite's `/api` proxy in development.
+ * 2. Error Normalisation: `toApiError` turns axios' many failure shapes
+ *    (server offline, timeout, FastAPI 422 validation list, 500) into one
+ *    `{ title, message, details }` object that <ErrorMessage> can render.
+ * 3. Cancellation: every call accepts an AbortSignal, so a component can
+ *    cancel a request it no longer needs (newer click, page unmount).
+ */
+export const api = axios.create({
+  baseURL: "/",
+  timeout: 15000,
+  headers: { "Content-Type": "application/json" },
+});
+
+export function isCancel(err) {
+  return axios.isCancel(err) || err?.name === "CanceledError";
+}
+
+export function toApiError(err) {
+  if (!err.response) {
+    return {
+      title: "Can't reach the backend",
+      message:
+        "The Python server doesn't seem to be running. Start it from the backend folder with: uvicorn main:app --reload --port 8000",
+      details: err.message,
+    };
+  }
+
+  const { status, data } = err.response;
+  if (status === 422 && Array.isArray(data?.detail)) {
+    return {
+      title: "Invalid request",
+      message: data.detail.map((d) => d.msg).join(" "),
+      details: data.detail,
+    };
+  }
+  return {
+    title: `Server error (${status})`,
+    message: typeof data?.detail === "string" ? data.detail : "The backend returned an unexpected error.",
+    details: data,
+  };
+}
+
+/** POST /api/forward-pass/run */
+export async function runForwardPass({ architecture, inputs, activation, seed }, { signal } = {}) {
+  const { data } = await api.post(
+    "/api/forward-pass/run",
+    { architecture, inputs, activation, seed },
+    { signal }
+  );
+  return data;
+}

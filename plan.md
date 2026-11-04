@@ -191,30 +191,30 @@ Python (FastAPI) backend.
 
 **Page:** `src/pages/ForwardPass.jsx`
 
-- [ ] Concept explainer:
-  - [ ] Explain what a forward pass is: feeding input → getting output
-  - [ ] Explain that this is what happens every time AI makes a prediction
-- [ ] Display the locked architecture from Section 2 (or a default if skipped)
-- [ ] Input controls:
-  - [ ] One numeric input field per input node (range 0.0–1.0)
-  - [ ] "Randomize Inputs" button to auto-fill with random values
-- [ ] "Run Forward Pass" button:
-  - [ ] Sends inputs to the backend
-  - [ ] Backend computes activations for every neuron layer by layer
-  - [ ] Returns: activation values per node, weights used
-- [ ] Animated visualization:
-  - [ ] Activation value displayed inside each node
-  - [ ] Node fill color intensity scales with activation (0 = dark, 1 = bright)
-  - [ ] Animated pulses travel along edges from input to output, layer by layer
-  - [ ] Animation plays sequentially (layer 1 → layer 2 → … → output)
-  - [ ] Speed control slider (slow / normal / fast)
-- [ ] Output display:
-  - [ ] Show final output node values prominently
-  - [ ] If multiple outputs, show which one has the highest value (the "prediction")
-- [ ] "Step Through" mode:
-  - [ ] User clicks "Next Layer" to advance the animation one layer at a time
-  - [ ] Shows the computation happening at each layer (sum + activation)
-- [ ] Key Takeaway card + "Mark as Complete" button
+- [x] Concept explainer:
+  - [x] Explain what a forward pass is: feeding input → getting output
+  - [x] Explain that this is what happens every time AI makes a prediction
+- [x] Display the locked architecture from Section 2 (or a default if skipped)
+- [x] Input controls:
+  - [x] One numeric input field per input node (range 0.0–1.0)
+  - [x] "Randomize Inputs" button to auto-fill with random values
+- [x] "Run Forward Pass" button:
+  - [x] Sends inputs to the backend
+  - [x] Backend computes activations for every neuron layer by layer
+  - [x] Returns: activation values per node, weights used
+- [x] Animated visualization:
+  - [x] Activation value displayed inside each node
+  - [x] Node fill color intensity scales with activation (0 = dark, 1 = bright)
+  - [x] Animated pulses travel along edges from input to output, layer by layer
+  - [x] Animation plays sequentially (layer 1 → layer 2 → … → output)
+  - [x] Speed control slider (slow / normal / fast)
+- [x] Output display:
+  - [x] Show final output node values prominently
+  - [x] If multiple outputs, show which one has the highest value (the "prediction")
+- [x] "Step Through" mode:
+  - [x] User clicks "Next Layer" to advance the animation one layer at a time
+  - [x] Shows the computation happening at each layer (sum + activation)
+- [x] Key Takeaway card + "Mark as Complete" button
 
 ---
 
@@ -292,10 +292,10 @@ Python (FastAPI) backend.
 - [ ] `backend/routers/` directory:
   - [ ] `routers/health.py`
   - [ ] `routers/neuron.py` — single neuron computation
-  - [ ] `routers/forward_pass.py` — full network forward pass
+  - [x] `routers/forward_pass.py` — full network forward pass
   - [ ] `routers/train.py` — training loop with polling
   - [ ] `routers/boundary.py` — decision boundary grid + point prediction
-- [ ] `backend/models/network.py` — PyTorch network class (configurable architecture)
+- [x] `backend/models/network.py` — PyTorch network class (configurable architecture)
 - [ ] `backend/schemas/` — Pydantic request/response models for all endpoints
 - [ ] `backend/state.py` — shared app state to hold the trained model between requests
 - [ ] `backend/utils/` — helper functions (weight extraction, boundary grid generation)
@@ -310,11 +310,11 @@ Python (FastAPI) backend.
   - [ ] Returns: `weighted_sum` (float), `output` (float), `activation_used` (string)
 
 ### 5.4 Forward Pass Endpoint (Section 3)
-- [ ] `POST /api/forward-pass/run`
-  - [ ] Input: `architecture` (layer sizes), `inputs` (list of floats), `activation` (string)
-  - [ ] Builds a PyTorch model with random weights
-  - [ ] Runs a forward pass
-  - [ ] Returns: `node_activations` (per layer), `weights` (per edge), `output` (final values)
+- [x] `POST /api/forward-pass/run`
+  - [x] Input: `architecture` (layer sizes), `inputs` (list of floats), `activation` (string)
+  - [x] Builds a PyTorch model with random weights
+  - [x] Runs a forward pass
+  - [x] Returns: `node_activations` (per layer), `weights` (per edge), `output` (final values)
 
 ### 5.5 Training Endpoints (Section 4)
 - [ ] `POST /api/train/start`

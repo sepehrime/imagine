@@ -59,6 +59,12 @@
    - [4.8 Invisible Hit Areas for Thin SVG Elements](#48-invisible-hit-areas-for-thin-svg-elements)
    - [4.9 Draft vs. Committed State ("Lock This Architecture")](#49-draft-vs-committed-state-lock-this-architecture)
    - [4.10 Counting Parameters Correctly (Domain Accuracy in the UI)](#410-counting-parameters-correctly-domain-accuracy-in-the-ui)
+   - [4.11 Reproducible Randomness: Seeds & Local Generators](#411-reproducible-randomness-seeds--local-generators)
+   - [4.12 Logits vs. Probabilities: Keep `forward()` Raw](#412-logits-vs-probabilities-keep-forward-raw)
+   - [4.13 Routers, Schemas & Models: Structuring a FastAPI Feature](#413-routers-schemas--models-structuring-a-fastapi-feature)
+   - [4.14 Async UI Safety: Cancellation, State Machines & Stale Results](#414-async-ui-safety-cancellation-state-machines--stale-results)
+   - [4.15 Timer-Driven Animation with `useEffect` Cleanup](#415-timer-driven-animation-with-useeffect-cleanup)
+   - [4.16 `white-space: nowrap` Swallowed the Line Break (Debugging Lesson)](#416-white-space-nowrap-swallowed-the-line-break-debugging-lesson)
 
 ---
 
@@ -643,6 +649,88 @@ In professional engineering, choosing a framework is documented as an **Architec
   * **Neurons** = hidden + output nodes = **35**. Input nodes only *hold* data and compute nothing, so they aren't neurons and have no bias.
   * **Parameters** = weights + biases (one per neuron) = 248 + 35 = **283**. This matches what PyTorch reports via `sum(p.numel() for p in model.parameters())`.
 * **Takeaway:** Put the counting rules in one pure function (`computeStats`) so they can be unit-tested against PyTorch's numbers in Phase 7, instead of scattering arithmetic through JSX.
+
+---
+
+### 4.11 Reproducible Randomness: Seeds & Local Generators
+* **Phase:** 4 (Section 3) / Phase 5.4
+* **The Problem:** The plan says "build a model with random weights". If every request got *new* random weights, running the same inputs twice would give two different answers. Learners would think the network is broken.
+* **The Solution:** The request carries a `seed`. Same seed → same weights → same answer. "New random weights" just picks a new seed.
+  ```python
+  generator = torch.Generator().manual_seed(seed)          # local RNG
+  nn.init.xavier_uniform_(layer.weight, generator=generator)
+  ```
+* **Why a *local* generator?** `torch.manual_seed()` changes PyTorch's **global** random state. Once Section 4 trains a model in a background thread, a forward-pass request calling `manual_seed` would silently change the training run's randomness. A local `Generator` keeps each request isolated: no shared mutable state.
+
+---
+
+### 4.12 Logits vs. Probabilities: Keep `forward()` Raw
+* **Phase:** 4 (Section 3)
+* **The Concept:** `ConfigurableNetwork.forward()` returns raw output scores (**logits**), not probabilities. Probabilities are computed separately, only for display:
+  * 1 output → **sigmoid** (an independent 0–1 score)
+  * 2+ outputs → **softmax** (probabilities that sum to 1; the highest is the prediction)
+* **Why:** PyTorch's training losses (`nn.CrossEntropyLoss`, `nn.BCEWithLogitsLoss`) expect logits and apply softmax/sigmoid internally in a numerically stable way. Putting softmax inside `forward()` would make Section 4 apply it twice and train badly.
+* **Design Principle:** One model class serves both inference (Section 3) and training (Section 4) because "compute" and "present" are kept separate.
+
+---
+
+### 4.13 Routers, Schemas & Models: Structuring a FastAPI Feature
+* **Phase:** 5.4 (first real endpoint)
+* **The Layout:** Each feature is split into three layers with one job each:
+
+| File | Responsibility |
+| :--- | :--- |
+| `schemas/forward_pass.py` | The **contract**: what a valid request/response looks like (Pydantic) |
+| `models/network.py` | The **domain logic**: the PyTorch network, no HTTP knowledge |
+| `routers/forward_pass.py` | The **glue**: HTTP route → call model → shape the response |
+
+  `main.py` just does `app.include_router(forward_pass.router)`.
+* **Validate at the boundary:** a `@model_validator` checks that `len(inputs) == architecture[0]`. Bad requests get a 422 with a clear message *before* PyTorch ever runs, and the route body can trust its input.
+* **`def`, not `async def`:** the route is CPU-bound PyTorch work, so a plain `def` makes FastAPI run it in a worker thread instead of blocking the event loop (see 2.4).
+* **Tested in-memory** with `TestClient`: same seed is deterministic, softmax sums to 1, one weighted sum checked by hand, and four invalid payloads return 422.
+
+---
+
+### 4.14 Async UI Safety: Cancellation, State Machines & Stale Results
+* **Phase:** 4 (Section 3)
+* **1. Explicit state machine.** A single `status` (`idle → loading → success | error`) instead of separate `isLoading` / `hasError` booleans, which can contradict each other (loading *and* errored).
+* **2. Cancel superseded requests.** Click Run twice quickly: if request #1 is slow, its response could arrive *after* #2 and overwrite the newer result (a **race condition**). Each run aborts the previous one:
+  ```javascript
+  abortRef.current?.abort();
+  const controller = new AbortController();
+  abortRef.current = controller;
+  const data = await runForwardPass(payload, { signal: controller.signal });
+  ```
+  Cancelled requests throw, and `isCancel(err)` lets the code ignore them quietly. The same ref aborts the request on unmount.
+* **3. Detect stale results.** The result stores the exact request it answers (`resultKey = JSON.stringify(payload)`). If the inputs change afterwards, the page says "inputs changed since this run" instead of showing numbers that belong to different inputs.
+* **4. Normalise errors in one place.** `toApiError()` in `api/client.js` turns "server offline", FastAPI's 422 list and 500s into one `{ title, message, details }` shape for `<ErrorMessage>`, including a hint on how to start the backend.
+
+---
+
+### 4.15 Timer-Driven Animation with `useEffect` Cleanup
+* **Phase:** 4 (Section 3)
+* **The Concept:** Auto-play reveals one layer per tick. Instead of a `setInterval` that has to be managed by hand, an effect schedules exactly **one** timeout for the next step:
+  ```javascript
+  useEffect(() => {
+    if (!result || mode !== "play" || revealed >= lastLayer) return;
+    const timer = setTimeout(() => setRevealed((r) => r + 1), stepMs);
+    return () => clearTimeout(timer);
+  }, [result, runId, mode, revealed, lastLayer, stepMs]);
+  ```
+* **Why it's robust:** Every change (new step, switching to Step mode, changing speed, leaving the page) runs the cleanup first, so there's never more than one pending timer. Auto-play and Step-through share the same `revealed` state; they're just two different "controllers" for the same picture.
+
+---
+
+### 4.16 `white-space: nowrap` Swallowed the Line Break (Debugging Lesson)
+* **Phase:** 4 (Section 3)
+* **Symptom:** For a 6-input neuron, the equation `z = (w)(a) + … + b` ended in `(0.73)(−`, and one term was missing entirely.
+* **Root Cause:** Each term was wrapped in `whitespace-nowrap` (to keep `(0.73)(0.25)` together) and the `" + "` separator was *inside* that span. So the line had **no legal break point** between terms. The text overflowed sideways and the `overflow-x-auto` container hid the rest.
+* **Fix:** Move the separator *outside* the nowrap span. Terms still never split, but the spaces around `+` become wrap opportunities:
+  ```jsx
+  {i > 0 && " + "}
+  <span className="whitespace-nowrap">({w})({a})</span>
+  ```
+* **Lesson:** `overflow: auto/hidden` can hide a layout bug instead of revealing it. Test with the *largest* realistic data (here: 6 inputs), not the default.
 
 ---
 
