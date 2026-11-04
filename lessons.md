@@ -55,6 +55,10 @@
    - [4.4 Replaying Animations with a Changing `key`](#44-replaying-animations-with-a-changing-key)
    - [4.5 Normalising Values with Different Ranges (Min-Max Scaling)](#45-normalising-values-with-different-ranges-min-max-scaling)
    - [4.6 Theme-Aware SVG: Tailwind Classes & CSS Variables](#46-theme-aware-svg-tailwind-classes--css-variables)
+   - [4.7 Enter / Update / Exit Animations with Stable, Role-Based Keys](#47-enter--update--exit-animations-with-stable-role-based-keys)
+   - [4.8 Invisible Hit Areas for Thin SVG Elements](#48-invisible-hit-areas-for-thin-svg-elements)
+   - [4.9 Draft vs. Committed State ("Lock This Architecture")](#49-draft-vs-committed-state-lock-this-architecture)
+   - [4.10 Counting Parameters Correctly (Domain Accuracy in the UI)](#410-counting-parameters-correctly-domain-accuracy-in-the-ui)
 
 ---
 
@@ -585,6 +589,60 @@ In professional engineering, choosing a framework is documented as an **Architec
   ```
   `paint-order: stroke` paints the outline first and the fill on top, and the CSS variable switches the halo colour with the theme.
 * **Debugging Lesson:** A chart drawn on a small `viewBox` (280 wide) but displayed in a wide card is scaled up, *including its text*. Size the `viewBox` close to the rendered size so fonts stay proportionate.
+
+---
+
+### 4.7 Enter / Update / Exit Animations with Stable, Role-Based Keys
+* **Phase:** 4 (Section 2)
+* **The Concept:** D3's classic *enter / update / exit* pattern (new elements appear, existing ones move, removed ones disappear) can be done in React with Framer Motion's `AnimatePresence`:
+  ```jsx
+  <AnimatePresence initial={false}>
+    {nodes.map((n) => (
+      <motion.circle key={n.id}
+        initial={{ cx: n.x, cy: n.y, r: 0 }}   // enter: grow from nothing
+        animate={{ cx: n.x, cy: n.y, r: 14 }}   // update: slide to new spot
+        exit={{ r: 0, opacity: 0 }} />          // exit: shrink away
+    ))}
+  </AnimatePresence>
+  ```
+* **The Key Decision:** React matches elements between renders **by `key`**. If output nodes were keyed by layer index (`"3-0"`), adding a hidden layer would make them `"4-0"`: React would destroy the old outputs and create new ones, so they'd pop instead of slide. Keying by **role** (`"out-0"`, `"h2-3"`) keeps their identity, so they glide to the new position.
+* **Rule of thumb:** A key should answer "is this the *same thing* as before?", not "where is it in the list?".
+
+---
+
+### 4.8 Invisible Hit Areas for Thin SVG Elements
+* **Phase:** 4 (Section 2)
+* **The Problem:** Edges are 1.25px lines, which are almost impossible to hover with a mouse (and impossible on touch).
+* **The Solution:** Draw a second, transparent, 8px-wide line on top of each visible line and attach the hover handlers there:
+  ```jsx
+  <line {...coords} stroke="transparent" strokeWidth={8} onMouseEnter={...} />
+  ```
+* **Why separate them:** The visible line's look (thin, animated, dimmed) can change freely without affecting how easy it is to interact with. Visual design and interaction target are two different concerns.
+
+---
+
+### 4.9 Draft vs. Committed State ("Lock This Architecture")
+* **Phase:** 4 (Section 2)
+* **The Concept:** The sliders edit a local **draft** (`useState`); the Lock button **commits** it to `localStorage` through `useArchitecture`. Comparing the two drives a three-state UI:
+
+| Draft vs. locked | UI shows |
+| :--- | :--- |
+| Nothing locked yet | "Lock This Architecture" |
+| Equal | ✓ "Locked" (button disabled) |
+| Different | "Unsaved changes; Section 3 still uses …" + "Update" |
+
+* **Why not save on every slider move?** Section 3 should only ever see a network the learner *chose*, not a half-dragged intermediate. It's the same idea as a form's "Save" button or a Git commit vs. the working tree.
+* **Lazy initialisation:** `useState(() => locked ?? DEFAULT_ARCHITECTURE)` starts the draft from the saved network, so returning learners see their own design.
+
+---
+
+### 4.10 Counting Parameters Correctly (Domain Accuracy in the UI)
+* **Phase:** 4 (Section 2)
+* **The Concept:** An educational UI must use the domain's real definitions. For a fully connected network with layer sizes `[4, 8, 8, 8, 8, 3]`:
+  * **Weights** = Σ (layer size × next layer size) = 4·8 + 8·8·3 + 8·3 = **248**
+  * **Neurons** = hidden + output nodes = **35**. Input nodes only *hold* data and compute nothing, so they aren't neurons and have no bias.
+  * **Parameters** = weights + biases (one per neuron) = 248 + 35 = **283**. This matches what PyTorch reports via `sum(p.numel() for p in model.parameters())`.
+* **Takeaway:** Put the counting rules in one pure function (`computeStats`) so they can be unit-tested against PyTorch's numbers in Phase 7, instead of scattering arithmetic through JSX.
 
 ---
 

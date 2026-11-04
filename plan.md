@@ -160,29 +160,29 @@ Python (FastAPI) backend.
 
 **Page:** `src/pages/BuildNetwork.jsx`
 
-- [ ] Concept explainer:
-  - [ ] Explain layers: input layer, hidden layers, output layer
-  - [ ] Explain how neurons connect across layers (fully connected)
-  - [ ] Explain why depth matters (more layers = more complex patterns)
-- [ ] Network architecture controls:
-  - [ ] Slider: number of input nodes (1–4)
-  - [ ] Slider: number of hidden layers (1–4)
-  - [ ] Slider: number of nodes per hidden layer (1–8)
-  - [ ] Slider: number of output nodes (1–3)
-  - [ ] Dropdown: activation function applied to hidden layers
-- [ ] Live network diagram (D3.js):
-  - [ ] Renders a fully connected network matching the sliders
-  - [ ] Nodes shown as circles, edges as lines
-  - [ ] Updates instantly as sliders change (smooth animation)
-  - [ ] Nodes in each layer have a distinct color
-  - [ ] Hovering a node shows its layer name and position
-  - [ ] Hovering an edge shows "weight: (uninitialized)" label
-- [ ] Display network stats below the diagram:
-  - [ ] Total number of neurons
-  - [ ] Total number of weights (connections)
-  - [ ] Total number of layers
-- [ ] "Lock This Architecture" button to carry it forward to the next sections
-- [ ] Key Takeaway card + "Mark as Complete" button
+- [x] Concept explainer:
+  - [x] Explain layers: input layer, hidden layers, output layer
+  - [x] Explain how neurons connect across layers (fully connected)
+  - [x] Explain why depth matters (more layers = more complex patterns)
+- [x] Network architecture controls:
+  - [x] Slider: number of input nodes (1–4)
+  - [x] Slider: number of hidden layers (1–4)
+  - [x] Slider: number of nodes per hidden layer (1–8)
+  - [x] Slider: number of output nodes (1–3)
+  - [x] Dropdown: activation function applied to hidden layers
+- [x] Live network diagram (D3.js):
+  - [x] Renders a fully connected network matching the sliders
+  - [x] Nodes shown as circles, edges as lines
+  - [x] Updates instantly as sliders change (smooth animation)
+  - [x] Nodes in each layer have a distinct color
+  - [x] Hovering a node shows its layer name and position
+  - [x] Hovering an edge shows "weight: (uninitialized)" label
+- [x] Display network stats below the diagram:
+  - [x] Total number of neurons
+  - [x] Total number of weights (connections)
+  - [x] Total number of layers
+- [x] "Lock This Architecture" button to carry it forward to the next sections
+- [x] Key Takeaway card + "Mark as Complete" button
 
 ---
 
