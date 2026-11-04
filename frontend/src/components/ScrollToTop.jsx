@@ -12,17 +12,21 @@ import { useLocation } from "react-router-dom";
  *
  * This utility component listens to pathname mutations from React Router and imperatively
  * resets the scroll coordinates to the top of the window.
+ *
+ * Deep links are respected: when the URL has a #hash (e.g. /glossary#weight),
+ * it does nothing and lets the target page scroll to that element instead.
  */
 export default function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
 
   useEffect(() => {
+    if (hash) return;
     window.scrollTo({
       top: 0,
       left: 0,
       behavior: "instant",
     });
-  }, [pathname]);
+  }, [pathname, hash]);
 
   return null;
 }

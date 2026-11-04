@@ -50,6 +50,11 @@
    - [3.21 Respecting `prefers-reduced-motion` & Decorative Graphics](#321-respecting-prefers-reduced-motion--decorative-graphics)
    - [3.22 Precompute Static Data Outside the Component](#322-precompute-static-data-outside-the-component)
    - [3.23 Isolating Business Rules in Pure Functions (`suggestNextSection`)](#323-isolating-business-rules-in-pure-functions-suggestnextsection)
+   - [3.24 One Glossary, Many Readers: Content as a Single Source of Truth](#324-one-glossary-many-readers-content-as-a-single-source-of-truth)
+   - [3.25 Deep Links in an SPA: Hashes vs. Scroll-to-Top](#325-deep-links-in-an-spa-hashes-vs-scroll-to-top)
+   - [3.26 Hover + Click Toggle Fight (Debugging Lesson)](#326-hover--click-toggle-fight-debugging-lesson)
+   - [3.27 Search, Letter Navigation & Responsive Sticky Bars](#327-search-letter-navigation--responsive-sticky-bars)
+   - [3.28 Safe External Links: `target="_blank"` + `rel`](#328-safe-external-links-target_blank--rel)
 
 4. [Interactive Visualizations (Phase 4)](#4-interactive-visualizations-phase-4)
    - [4.1 Compute on the Client When the Math Is Cheap](#41-compute-on-the-client-when-the-math-is-cheap)
@@ -557,6 +562,66 @@ In professional engineering, choosing a framework is documented as an **Architec
   const next = sections.find((section) => !completedIds.includes(section.id));
   return next ? next.id : null;
   ```
+
+---
+
+### 3.24 One Glossary, Many Readers: Content as a Single Source of Truth
+* **Phase:** 6.1
+* **The Problem:** Before Phase 6, each page passed its own `definition="..."` to `<GlossaryTerm>`. The same idea was explained in several places with different wording, and the Glossary page would have been a third copy.
+* **The Solution:** `src/data/glossary.js` holds all 34 terms (`term`, `aliases`, `definition`, `sections`). Two readers consume it:
+  * the **Glossary page** lists, searches and groups the entries;
+  * **`<GlossaryTerm term="Weights">`** looks its definition up with `findTerm()`, matching aliases case-insensitively, so "Weights" finds the "Weight" entry.
+  ```javascript
+  const BY_NAME = new Map(GLOSSARY.flatMap((e) => [e.term, ...e.aliases].map((n) => [n.toLowerCase(), e])));
+  export const findTerm = (name) => BY_NAME.get(name.toLowerCase()) ?? null;
+  ```
+* **Fail loudly in development:** if a page uses a term that isn't in the data, `GlossaryTerm` logs a `console.warn` in dev builds (`import.meta.env.DEV`), so typos are caught immediately instead of shipping an empty popup.
+* **Verified by script:** a small Node check confirmed every term the pages use and all 31 planned terms resolve, with no duplicate slugs (duplicate `id`s would break deep links).
+
+---
+
+### 3.25 Deep Links in an SPA: Hashes vs. Scroll-to-Top
+* **Phase:** 6.1
+* **The Conflict:** `ScrollToTop` (lesson 3.8) scrolls to the top on every route change. That silently broke `/glossary#weight` links: the browser's native "jump to #id" doesn't happen in client-side navigation, and the scroll-to-top would undo it anyway.
+* **The Fix (two halves):**
+  1. `ScrollToTop` steps aside when the URL has a hash: `if (hash) return;`
+  2. The Glossary page scrolls the target into view itself, *after* it has rendered:
+  ```javascript
+  useEffect(() => {
+    if (!targetSlug) return;
+    document.getElementById(targetSlug)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [targetSlug]);
+  ```
+* **URL as state:** the highlighted card is derived straight from `location.hash`, not copied into `useState`. Back/forward buttons and shared links just work, and there's nothing to keep in sync.
+* **Sticky headers vs. anchors:** `scroll-mt-48` (`scroll-margin-top`) stops the target from hiding under the sticky site header and search bar.
+
+---
+
+### 3.26 Hover + Click Toggle Fight (Debugging Lesson)
+* **Phase:** 6 (found while testing glossary deep links)
+* **Symptom:** With a mouse, clicking an inline glossary word *closed* its popup.
+* **Root Cause:** Two handlers changed the same state: `onMouseEnter` → open, then `onClick` → `setIsOpen(!isOpen)`. By the time the click arrives, hovering has already opened it, so the toggle closes it. On touch screens (no hover) it worked, which is why it went unnoticed.
+* **Fix:** make click *idempotent*: it always opens. Closing has its own explicit triggers: mouse leave, a click outside, and **Escape** (also an accessibility win for keyboard users).
+* **Lesson:** When several events drive one piece of state, avoid toggles. Give each event a clear intent ("open" / "close"), and test with both mouse and touch semantics.
+
+---
+
+### 3.27 Search, Letter Navigation & Responsive Sticky Bars
+* **Phase:** 6.1
+* **Derived pipeline:** `query → filter (term, aliases, definition) → group by first letter` runs in one `useMemo`. Only the query string is state.
+* **Letter bar:** letters with no matching terms are `disabled` (not hidden), so the A–Z layout doesn't jump around while you type. Clicking scrolls with `scrollIntoView` instead of changing the URL hash, which keeps the address bar clean.
+* **Announce results:** the "3 of 34 terms match" line is `aria-live="polite"`, so screen-reader users hear the effect of typing, and a dedicated empty state offers "Clear the search".
+* **Responsive sticky bar:** on a phone the wrapped A–Z rows made the sticky bar ~200px tall (a quarter of the screen). On small screens it's now a single horizontally scrolling row (`overflow-x-auto`, buttons `shrink-0`), wrapping again from `sm:` up. The bar dropped to 146px.
+* **Full-bleed inside a padded container:** the bar uses negative margins matching the layout's responsive padding (`-mx-4 sm:-mx-6 lg:-mx-8` with the same `px-*`), so its background reaches the edges at every breakpoint.
+
+---
+
+### 3.28 Safe External Links: `target="_blank"` + `rel`
+* **Phase:** 6.2
+* **The Risk:** A page opened with `target="_blank"` historically got a `window.opener` reference back to your tab and could redirect it to a phishing page ("reverse tabnabbing").
+* **The Rule:** every outbound link uses `rel="noopener noreferrer"`. `noopener` cuts the `window.opener` link; `noreferrer` also hides which page sent the visitor. Modern browsers imply `noopener` for `_blank`, but writing it out documents the intent and protects older browsers.
+* **Accessibility:** each new-tab link includes visually hidden text, `<span className="sr-only"> (opens in a new tab)</span>`, so screen-reader users aren't surprised by a new tab.
+* **Content as data:** the tech stack, credits and resources on the About page are arrays rendered by small components (`StackList`, resource cards), and "The journey" is generated from `SECTIONS_NAV`.
 
 ---
 

@@ -154,7 +154,6 @@ export default function Boundary() {
           the{" "}
           <GlossaryTerm
             term="Decision Boundary"
-            definition="The line or curve where a network's prediction switches from one class to another."
           >
             decision boundary
           </GlossaryTerm>{" "}

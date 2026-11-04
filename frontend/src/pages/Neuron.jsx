@@ -123,21 +123,18 @@ export default function Neuron() {
           The basic building block of any neural network. Learn how inputs are scaled by{" "}
           <GlossaryTerm
             term="Weights"
-            definition="Numerical parameters adjusted during training that scale the strength and influence of an incoming input signal."
           >
             weights
           </GlossaryTerm>
           , shifted by a{" "}
           <GlossaryTerm
             term="Bias"
-            definition="An added constant that allows the neuron to shift its activation threshold independently of its inputs."
           >
             bias
           </GlossaryTerm>
           , and squashed through an{" "}
           <GlossaryTerm
             term="Activation Function"
-            definition="A mathematical function (like ReLU or Sigmoid) that introduces non-linearity, allowing neural networks to learn non-linear boundaries."
           >
             activation function
           </GlossaryTerm>

@@ -104,7 +104,6 @@ export default function Build() {
           One neuron can only draw a straight line. Connect many of them into{" "}
           <GlossaryTerm
             term="Hidden Layer"
-            definition="Intermediate layers of neurons situated between the input and output layers that extract progressively higher-level features."
           >
             hidden layers
           </GlossaryTerm>{" "}

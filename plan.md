@@ -348,25 +348,25 @@ Python (FastAPI) backend.
 ## 📄 Phase 6: Glossary & About Pages
 
 ### 6.1 Glossary Page
-- [ ] Create `src/pages/Glossary.jsx`
-- [ ] Compile all neural network terms used in the app (target: 25+ terms):
-  - [ ] Activation Function, Architecture, Backpropagation, Bias
-  - [ ] Classification, Convergence, Dataset, Decision Boundary
-  - [ ] Deep Learning, Edge (connection), Epoch, Feature
-  - [ ] Forward Pass, Gradient Descent, Hidden Layer, Input Layer
-  - [ ] Layer, Learning Rate, Loss / Loss Function, Neural Network
-  - [ ] Neuron / Node, Output Layer, Overfitting, Prediction
-  - [ ] ReLU, Sigmoid, Tanh, Training, Underfitting, Weight
-- [ ] Alphabetically sorted with letter jump navigation
-- [ ] Search/filter input to find terms quickly
-- [ ] Each term links back to the section where it appears
+- [x] Create `src/pages/Glossary.jsx`
+- [x] Compile all neural network terms used in the app (target: 25+ terms):
+  - [x] Activation Function, Architecture, Backpropagation, Bias
+  - [x] Classification, Convergence, Dataset, Decision Boundary
+  - [x] Deep Learning, Edge (connection), Epoch, Feature
+  - [x] Forward Pass, Gradient Descent, Hidden Layer, Input Layer
+  - [x] Layer, Learning Rate, Loss / Loss Function, Neural Network
+  - [x] Neuron / Node, Output Layer, Overfitting, Prediction
+  - [x] ReLU, Sigmoid, Tanh, Training, Underfitting, Weight
+- [x] Alphabetically sorted with letter jump navigation
+- [x] Search/filter input to find terms quickly
+- [x] Each term links back to the section where it appears
 
 ### 6.2 About Page
-- [ ] Create `src/pages/About.jsx`
-- [ ] Describe the purpose of the app
-- [ ] List tech stack used (React, Vite, FastAPI, PyTorch, D3, Recharts, Framer Motion)
-- [ ] Credit open-source tools and libraries
-- [ ] Link to further learning resources (e.g., 3Blue1Brown Neural Networks playlist, fast.ai)
+- [x] Create `src/pages/About.jsx`
+- [x] Describe the purpose of the app
+- [x] List tech stack used (React, Vite, FastAPI, PyTorch, D3, Recharts, Framer Motion)
+- [x] Credit open-source tools and libraries
+- [x] Link to further learning resources (e.g., 3Blue1Brown Neural Networks playlist, fast.ai)
 
 ---
 

@@ -76,7 +76,7 @@ export default function Footer() {
                 <a
                   href="http://localhost:8000/docs"
                   target="_blank"
-                  rel="noreferrer"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-slate-600 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5" />

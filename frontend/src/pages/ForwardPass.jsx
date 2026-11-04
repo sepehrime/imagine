@@ -177,7 +177,6 @@ export default function ForwardPass() {
           out on the right. This is the{" "}
           <GlossaryTerm
             term="Forward Pass"
-            definition="The calculation process of transmitting input values forward through network layers to compute predicted outputs."
           >
             forward pass
           </GlossaryTerm>

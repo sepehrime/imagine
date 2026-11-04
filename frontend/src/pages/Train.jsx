@@ -153,14 +153,12 @@ export default function Train() {
           In Section 3 the weights were random. Now the network learns its own: watch the{" "}
           <GlossaryTerm
             term="Loss Function"
-            definition="A formula that scores how wrong the network's predictions are. Training tries to make this number as small as possible."
           >
             loss
           </GlossaryTerm>{" "}
           fall as{" "}
           <GlossaryTerm
             term="Gradient Descent"
-            definition="The method that nudges every weight a small step in the direction that lowers the loss."
           >
             gradient descent
           </GlossaryTerm>{" "}
