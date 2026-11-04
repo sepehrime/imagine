@@ -261,47 +261,47 @@ Python (FastAPI) backend.
 
 **Page:** `src/pages/Boundary.jsx`
 
-- [ ] Concept explainer:
-  - [ ] Explain what a decision boundary is: the line (or surface) the network draws to separate classes
-  - [ ] Explain how complex networks can draw complex, curved boundaries
-- [ ] Display the trained model from Section 4 (or a pretrained default if skipped)
-- [ ] Decision boundary visualization:
-  - [ ] 2D scatter plot of the dataset (same dataset selected in Section 4)
-  - [ ] Background is colored by the network's predicted class at every point (heatmap)
-  - [ ] Data points overlaid as dots, color-coded by their true label
-  - [ ] Correct predictions shown as filled dots; misclassifications shown with an X
-  - [ ] Color gradient in the background shows the model's confidence (intensity = confidence)
-- [ ] Interactive exploration:
-  - [ ] User can click anywhere on the plot → backend returns the model's prediction + confidence for that point
-  - [ ] Clicked point appears on the chart with its predicted label shown
-- [ ] Retrain controls:
-  - [ ] Compact sliders for learning rate and epochs
-  - [ ] "Retrain" button → reruns training and re-renders the boundary
-  - [ ] Animate the boundary shifting as the new model trains
-- [ ] "What Changed?" panel:
-  - [ ] Side-by-side comparison: boundary before vs after retraining
-  - [ ] Shows final accuracy for each
-- [ ] Key Takeaway card + "Mark as Complete" button
+- [x] Concept explainer:
+  - [x] Explain what a decision boundary is: the line (or surface) the network draws to separate classes
+  - [x] Explain how complex networks can draw complex, curved boundaries
+- [x] Display the trained model from Section 4 (or a pretrained default if skipped)
+- [x] Decision boundary visualization:
+  - [x] 2D scatter plot of the dataset (same dataset selected in Section 4)
+  - [x] Background is colored by the network's predicted class at every point (heatmap)
+  - [x] Data points overlaid as dots, color-coded by their true label
+  - [x] Correct predictions shown as filled dots; misclassifications shown with an X
+  - [x] Color gradient in the background shows the model's confidence (intensity = confidence)
+- [x] Interactive exploration:
+  - [x] User can click anywhere on the plot → backend returns the model's prediction + confidence for that point
+  - [x] Clicked point appears on the chart with its predicted label shown
+- [x] Retrain controls:
+  - [x] Compact sliders for learning rate and epochs
+  - [x] "Retrain" button → reruns training and re-renders the boundary
+  - [x] Animate the boundary shifting as the new model trains
+- [x] "What Changed?" panel:
+  - [x] Side-by-side comparison: boundary before vs after retraining
+  - [x] Shows final accuracy for each
+- [x] Key Takeaway card + "Mark as Complete" button
 
 ---
 
 ## 🐍 Phase 5: Backend — API Endpoints (FastAPI)
 
 ### 5.1 Project Structure
-- [ ] `backend/main.py` — entry point, CORS config, route registration
+- [x] `backend/main.py` — entry point, CORS config, route registration
 - [ ] `backend/routers/` directory:
   - [ ] `routers/health.py`
   - [ ] `routers/neuron.py` — single neuron computation
   - [x] `routers/forward_pass.py` — full network forward pass
   - [x] `routers/train.py` — training loop with polling
-  - [ ] `routers/boundary.py` — decision boundary grid + point prediction
+  - [x] `routers/boundary.py` — decision boundary grid + point prediction
 - [x] `backend/models/network.py` — PyTorch network class (configurable architecture)
 - [ ] `backend/schemas/` — Pydantic request/response models for all endpoints
 - [x] `backend/state.py` — shared app state to hold the trained model between requests
-- [ ] `backend/utils/` — helper functions (weight extraction, boundary grid generation)
+- [x] `backend/utils/` — helper functions (weight extraction, boundary grid generation)
 
 ### 5.2 Health Check
-- [ ] `GET /health` → `{"status": "ok"}`
+- [x] `GET /health` → `{"status": "ok"}`
 
 ### 5.3 Neuron Endpoint (Section 1)
 - [ ] `POST /api/neuron/compute`
@@ -329,18 +329,18 @@ Python (FastAPI) backend.
 - [x] `POST /api/train/reset` — clears the current training session and model
 
 ### 5.6 Boundary Endpoints (Section 5)
-- [ ] `GET /api/boundary/grid`
-  - [ ] Uses the trained model from app state
-  - [ ] Computes predictions on a 100×100 grid of points
-  - [ ] Returns: grid predictions + confidence values for heatmap rendering
-- [ ] `POST /api/boundary/predict-point`
-  - [ ] Input: `x` (float), `y` (float)
-  - [ ] Returns: predicted class, confidence score
+- [x] `GET /api/boundary/grid`
+  - [x] Uses the trained model from app state
+  - [x] Computes predictions on a 100×100 grid of points
+  - [x] Returns: grid predictions + confidence values for heatmap rendering
+- [x] `POST /api/boundary/predict-point`
+  - [x] Input: `x` (float), `y` (float)
+  - [x] Returns: predicted class, confidence score
 
 ### 5.7 Model & State Management
 - [x] Store training state (model, optimizer, epoch count) in a global `AppState` object
 - [x] Use Python background thread for the training loop
-- [ ] Gracefully handle "no model trained yet" with a clear error response
+- [x] Gracefully handle "no model trained yet" with a clear error response
 - [x] Log all endpoint calls and training progress to the console
 
 ---

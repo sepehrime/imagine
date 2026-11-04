@@ -93,3 +93,24 @@ export async function resumeTraining() {
 export async function resetTraining() {
   await api.post("/api/train/reset");
 }
+
+/** GET /api/boundary/grid — pass trainingId to see a run that's still training */
+export async function getBoundaryGrid(trainingId, { signal } = {}) {
+  const { data } = await api.get("/api/boundary/grid", {
+    params: trainingId ? { training_id: trainingId } : {},
+    signal,
+  });
+  return data;
+}
+
+/** POST /api/boundary/predict-point */
+export async function predictPoint({ x, y, trainingId }) {
+  const { data } = await api.post("/api/boundary/predict-point", { x, y, training_id: trainingId ?? null });
+  return data;
+}
+
+/** POST /api/boundary/default — instantly trains a default model */
+export async function trainDefaultModel() {
+  const { data } = await api.post("/api/boundary/default");
+  return data;
+}

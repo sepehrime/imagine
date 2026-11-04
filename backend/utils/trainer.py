@@ -53,6 +53,7 @@ class TrainingSession:
         config: TrainConfig,
         dataset: Dataset,
         on_complete: Callable[["TrainingSession"], None] | None = None,
+        paced: bool = True,
     ):
         self.id = uuid.uuid4().hex[:12]
         self.config = config
@@ -60,6 +61,7 @@ class TrainingSession:
         self.architecture = [2, config.hidden_size, dataset.num_classes]
         self.model = ConfigurableNetwork(self.architecture, HIDDEN_ACTIVATION, seed=MODEL_SEED)
         self._on_complete = on_complete
+        self._paced = paced
 
         # Shared state (guarded by _lock)
         self._lock = threading.Lock()
@@ -67,6 +69,7 @@ class TrainingSession:
         self.epoch = 0
         self.history: list[dict] = []
         self.weights = self._weights_snapshot()
+        self._state = self._state_snapshot()  # copy of all parameters, for frozen_model()
         self.error: str | None = None
 
         self._resume = threading.Event()
@@ -77,6 +80,10 @@ class TrainingSession:
     # ------------------------------------------------------------------ control
     def start(self) -> None:
         self._thread.start()
+
+    def run_blocking(self) -> None:
+        """Trains in the calling thread (used for the instant pretrained default)."""
+        self._run()
 
     def pause(self) -> bool:
         with self._lock:
@@ -125,9 +132,25 @@ class TrainingSession:
                 "error": self.error,
             }
 
+    def frozen_model(self) -> ConfigurableNetwork:
+        """
+        A separate copy of the network as of the latest finished epoch.
+        Safe to run predictions on while the training thread keeps updating
+        `self.model` in place.
+        """
+        with self._lock:
+            state = self._state
+        model = ConfigurableNetwork(self.architecture, HIDDEN_ACTIVATION)
+        model.load_state_dict(state)
+        model.eval()
+        return model
+
     # ---------------------------------------------------------------- training
     def _weights_snapshot(self) -> list[list[list[float]]]:
         return [layer.weight.detach().tolist() for layer in self.model.linears]
+
+    def _state_snapshot(self) -> dict[str, torch.Tensor]:
+        return {k: v.detach().clone() for k, v in self.model.state_dict().items()}
 
     @torch.no_grad()
     def _evaluate(self, X: torch.Tensor, y: torch.Tensor, loss_fn: nn.Module) -> tuple[float, float]:
@@ -141,6 +164,7 @@ class TrainingSession:
             self.epoch = epoch
             self.history.append({"epoch": epoch, "loss": loss, "accuracy": accuracy})
             self.weights = self._weights_snapshot()
+            self._state = self._state_snapshot()
 
     def _run(self) -> None:
         torch.set_num_threads(1)  # tiny model; avoid fighting other threads for cores
@@ -155,7 +179,11 @@ class TrainingSession:
             loss_fn = nn.CrossEntropyLoss()
             optimizer = torch.optim.SGD(self.model.parameters(), lr=cfg.learning_rate)
             shuffle = torch.Generator().manual_seed(MODEL_SEED)
-            pace = min(MAX_EPOCH_SECONDS, max(MIN_EPOCH_SECONDS, TARGET_RUN_SECONDS / cfg.epochs))
+            pace = (
+                min(MAX_EPOCH_SECONDS, max(MIN_EPOCH_SECONDS, TARGET_RUN_SECONDS / cfg.epochs))
+                if self._paced
+                else 0.0
+            )
 
             # Epoch 0 = the untrained network, so the charts start from "before"
             self._record(0, *self._evaluate(X, y, loss_fn))

@@ -44,6 +44,33 @@ class AppState:
         with self._lock:
             return self.session
 
+    def train_default(self, config: TrainConfig) -> TrainingSession:
+        """
+        Trains a model right now (unpaced, ~0.3 s) and makes it the trained
+        model. Used by Section 5 when the learner skipped Section 4.
+        """
+        session = TrainingSession(config, load_dataset(config.dataset), paced=False)
+        session.run_blocking()
+        if session.status != "done":
+            raise RuntimeError(session.error or "Default training failed.")
+        with self._lock:
+            previous, self.session, self.trained = self.session, session, session
+        if previous and previous is not session:
+            previous.stop()
+        logger.info("state: pretrained default ready (%s)", session.id)
+        return session
+
+    def boundary_session(self, training_id: str | None = None) -> TrainingSession | None:
+        """
+        Which run the decision boundary should show: the run with `training_id`
+        if it's the current one (live view while retraining), otherwise the
+        last finished model.
+        """
+        with self._lock:
+            if training_id and self.session and self.session.id == training_id:
+                return self.session
+            return self.trained
+
     def reset(self) -> None:
         """Stops the current run and forgets every model."""
         with self._lock:

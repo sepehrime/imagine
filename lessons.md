@@ -71,6 +71,11 @@
    - [4.20 Failing Loudly in Worker Threads (and the NaN-in-JSON Trap)](#420-failing-loudly-in-worker-threads-and-the-nan-in-json-trap)
    - [4.21 Log-Scale Sliders](#421-log-scale-sliders)
    - [4.22 Chart Hygiene: One Measure per Chart & Redundant Encoding](#422-chart-hygiene-one-measure-per-chart--redundant-encoding)
+   - [4.23 Reading a Model While Another Thread Trains It (Snapshot Copies)](#423-reading-a-model-while-another-thread-trains-it-snapshot-copies)
+   - [4.24 Canvas for Pixels, SVG for Shapes](#424-canvas-for-pixels-svg-for-shapes)
+   - [4.25 Empty States Are Not Errors: 409 "No Model Yet"](#425-empty-states-are-not-errors-409-no-model-yet)
+   - [4.26 Self-Terminating Polling & Derived "After" State](#426-self-terminating-polling--derived-after-state)
+   - [4.27 Tailwind Can't See Class Names You Build at Runtime (Debugging Lesson)](#427-tailwind-cant-see-class-names-you-build-at-runtime-debugging-lesson)
 
 ---
 
@@ -805,6 +810,75 @@ In professional engineering, choosing a framework is documented as an **Architec
 * **Live data:** Recharts' entry animation is turned off (`isAnimationActive={false}`); with a new point every 200 ms it would restart constantly.
 * **Validate colours, don't eyeball them:** the class colours were run through a colour-blindness validator for light and dark mode. One colour was below 3:1 contrast, so every class also gets a **shape** (circle / square / triangle) and a named legend. Colour is never the only cue.
 * **Text in text colours:** the tooltip value was first drawn in the line's blue; it now uses normal text ink. Colour marks identify series, text stays readable.
+
+---
+
+### 4.23 Reading a Model While Another Thread Trains It (Snapshot Copies)
+* **Phase:** 4 (Section 5) / Phase 5.6
+* **The Problem:** "Animate the boundary as the network retrains" means the grid endpoint must run predictions on a model that the training thread is updating **in place** (`optimizer.step()` overwrites the weight tensors). Reading mid-update could mix weights from two different steps.
+* **The Solution:** At the end of every epoch, *inside the lock*, the trainer stores a cloned copy of all parameters:
+  ```python
+  self._state = {k: v.detach().clone() for k, v in self.model.state_dict().items()}
+  ```
+  `frozen_model()` builds a fresh network and loads that copy. The grid endpoint works on its own private model, so it never shares tensors with the trainer.
+* **Why it's cheap:** the network has ~50–100 parameters; cloning them is microseconds. For a large model you'd snapshot less often, or use a read/write lock.
+* **General pattern:** *copy-on-publish*. The writer publishes immutable snapshots, readers only ever see complete ones. No reader ever needs to hold the lock while doing slow work.
+
+---
+
+### 4.24 Canvas for Pixels, SVG for Shapes
+* **Phase:** 4 (Section 5)
+* **The Problem:** The boundary is a 100×100 grid = **10,000 cells**, re-fetched every 400 ms while retraining. As SVG `<rect>`s, React would diff 10,000 elements per update.
+* **The Solution:** Paint the grid into an offscreen 100×100 `<canvas>` with one `ImageData` write, convert it to a data URL, and place it in the SVG as **one** `<image>`:
+  ```javascript
+  const image = ctx.createImageData(n, n);
+  image.data[i * 4 + 3] = alpha;            // RGBA bytes per cell
+  ctx.putImageData(image, 0, 0);
+  return canvas.toDataURL();                 // → <image href={...} />
+  ```
+* **Bonus:** the browser's smooth upscaling (100 px → plot size) blurs cell edges, so the boundary looks continuous for free.
+* **Rule of thumb:** many uniform pixels → canvas. Few interactive shapes (points, crosshair, labels) → SVG. Combining them gets the best of both: the data points stay crisp, clickable SVG on top of the canvas image.
+* **Encoding:** hue = predicted class, opacity = confidence rescaled from "pure guess" (1/k) to "certain" (1), so the boundary fades exactly where the network is unsure.
+
+---
+
+### 4.25 Empty States Are Not Errors: 409 "No Model Yet"
+* **Phase:** 5.7
+* **The Concept:** Visiting Section 5 before training anything is a *normal* situation, not a failure. The API signals it with **409 Conflict** ("the request is valid, but the server isn't in a state to answer it") and a clear message. The frontend treats 409 as its own **empty state** with two ways forward: "Go to Section 4" or "Use a pretrained network" (`POST /api/boundary/default`, which trains XOR unpaced in ~0.5 s).
+* **Status code choice:**
+
+| Code | Meaning here |
+| :--- | :--- |
+| 404 | This *resource* doesn't exist (e.g. unknown training id) |
+| 409 | The *server state* conflicts with the request (no model trained yet) |
+| 422 | The *request* itself is invalid (x outside [-1, 1]) |
+
+* **Trade-off noticed:** browsers log every non-2xx response in DevTools, so the empty state shows a red "409" line in the console. If "zero console errors" (Phase 7.3) is required, add a `GET /api/boundary/status → { has_model }` check first, or return `200` with `{ model: null }`.
+
+---
+
+### 4.26 Self-Terminating Polling & Derived "After" State
+* **Phase:** 4 (Section 5)
+* **Self-terminating loop:** `useBoundaryGrid` keeps fetching only while the **response** says `model.status === "running"`. There's no separate "is retraining?" flag that could drift out of sync with the server; the data itself decides when the loop ends.
+* **Derived, not stored:** the "What changed?" panel needs *before* and *after*:
+  * **before** is a snapshot of the past (the grid at the moment you clicked Retrain), so it *must* be state: `setBefore(grid)`.
+  * **after** is just "the current grid, once it belongs to the retrain run and that run is done", so it's derived on every render:
+  ```javascript
+  const after = before && model.training_id === retrainId && model.status === "done" ? grid : null;
+  ```
+* **Lazy defaults without effects:** the retrain sliders show the current model's settings until the learner moves them: `const shown = userValue ?? model.learning_rate`. No `useEffect` copying props into state, so there's no flash of wrong values and no sync bugs.
+
+---
+
+### 4.27 Tailwind Can't See Class Names You Build at Runtime (Debugging Lesson)
+* **Phase:** 4 (Section 5)
+* **Symptom (caught in review):** the misclassified ✕ marker built its colour with `fill.replaceAll("fill-", "stroke-")`, turning `fill-[#2a78d6]` into `stroke-[#2a78d6]`.
+* **Root Cause:** Tailwind generates CSS by **scanning source files for complete class names** at build time. `stroke-[#2a78d6]` never appears literally in any file, so no CSS rule is generated and the stroke silently does nothing.
+* **Fix:** store every variant as a full literal string in `classStyles.js`:
+  ```javascript
+  { fill: "fill-[#2a78d6] dark:fill-[#3987e5]", stroke: "stroke-[#2a78d6] dark:stroke-[#3987e5]" }
+  ```
+* **Rule:** In Tailwind, never concatenate or string-replace class names (`` `bg-${color}-500` ``). Map values to complete class strings instead. This is the same reason the layer colours in Sections 2–4 are written out in lookup tables.
 
 ---
 
