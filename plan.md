@@ -289,14 +289,14 @@ Python (FastAPI) backend.
 
 ### 5.1 Project Structure
 - [x] `backend/main.py` — entry point, CORS config, route registration
-- [ ] `backend/routers/` directory:
-  - [ ] `routers/health.py`
-  - [ ] `routers/neuron.py` — single neuron computation
+- [x] `backend/routers/` directory:
+  - [x] `routers/health.py`
+  - [x] `routers/neuron.py` — single neuron computation
   - [x] `routers/forward_pass.py` — full network forward pass
   - [x] `routers/train.py` — training loop with polling
   - [x] `routers/boundary.py` — decision boundary grid + point prediction
 - [x] `backend/models/network.py` — PyTorch network class (configurable architecture)
-- [ ] `backend/schemas/` — Pydantic request/response models for all endpoints
+- [x] `backend/schemas/` — Pydantic request/response models for all endpoints
 - [x] `backend/state.py` — shared app state to hold the trained model between requests
 - [x] `backend/utils/` — helper functions (weight extraction, boundary grid generation)
 
@@ -304,10 +304,10 @@ Python (FastAPI) backend.
 - [x] `GET /health` → `{"status": "ok"}`
 
 ### 5.3 Neuron Endpoint (Section 1)
-- [ ] `POST /api/neuron/compute`
-  - [ ] Input: `inputs` (list of floats), `weights` (list of floats), `bias` (float), `activation` (string: relu/sigmoid/tanh)
-  - [ ] Computes: weighted sum + activation
-  - [ ] Returns: `weighted_sum` (float), `output` (float), `activation_used` (string)
+- [x] `POST /api/neuron/compute`
+  - [x] Input: `inputs` (list of floats), `weights` (list of floats), `bias` (float), `activation` (string: relu/sigmoid/tanh)
+  - [x] Computes: weighted sum + activation
+  - [x] Returns: `weighted_sum` (float), `output` (float), `activation_used` (string)
 
 ### 5.4 Forward Pass Endpoint (Section 3)
 - [x] `POST /api/forward-pass/run`

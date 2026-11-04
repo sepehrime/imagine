@@ -22,6 +22,9 @@
    - [2.4 Concurrency in Python: ASGI vs. WSGI & The Threadpool Trap](#24-concurrency-in-python-asgi-vs-wsgi--the-threadpool-trap)
    - [2.5 In-Memory Integration Testing with `TestClient`](#25-in-memory-integration-testing-with-testclient)
    - [2.6 Binary Wheels & C-Extension Platform Compatibility](#26-binary-wheels--c-extension-platform-compatibility)
+   - [2.7 Keep `main.py` Thin: Every Route Lives in a Router](#27-keep-mainpy-thin-every-route-lives-in-a-router)
+   - [2.8 A Reference Implementation Endpoint (`/api/neuron/compute`)](#28-a-reference-implementation-endpoint-apineuroncompute)
+   - [2.9 Verify the Checklist Against Running Code, Not Memory](#29-verify-the-checklist-against-running-code-not-memory)
 
 3. [Frontend Architecture & State Management](#3-frontend-architecture--state-management)
    - [3.1 Dev Server Reverse Proxy vs. Cross-Origin Resource Sharing (CORS)](#31-dev-server-reverse-proxy-vs-cross-origin-resource-sharing-cors)
@@ -193,6 +196,38 @@ In professional engineering, choosing a framework is documented as an **Architec
 * Deep learning libraries (`torch`, `torchvision`, `numpy`, `scikit-learn`) are written in C/C++ with Python bindings.
 * When a new Python version is released (e.g. Python 3.14), precompiled binary wheels (`.whl`) may not immediately exist on PyPI for every platform (such as Apple Silicon ARM64).
 * In production engineering, always target stabilized Python versions (e.g. Python 3.10–3.12) where pre-built binary wheels are guaranteed, avoiding the need to compile complex C++ code from source on user machines.
+
+---
+
+### 2.7 Keep `main.py` Thin: Every Route Lives in a Router
+* **Phase:** 5.1
+* **The Concept:** `main.py` is the **composition root**: it creates the app, configures cross-cutting concerns (CORS, logging) and plugs routers in. It contains no endpoints itself:
+  ```python
+  app.include_router(health.router)
+  app.include_router(neuron.router)
+  app.include_router(forward_pass.router)
+  app.include_router(train.router)
+  app.include_router(boundary.router)
+  ```
+* **Why move even a 3-line `/health`?** Consistency is what makes a codebase navigable: "where's endpoint X?" always has the same answer (`routers/<feature>.py`). It also lets each router be tested, documented (`tags=`) and versioned on its own.
+* **Every endpoint has a contract:** each route declares a Pydantic `response_model` (and request model for bodies), all in `schemas/`. The only exception is `POST /api/train/reset`, which returns **204 No Content**, so there's no body to describe.
+
+---
+
+### 2.8 A Reference Implementation Endpoint (`/api/neuron/compute`)
+* **Phase:** 5.3
+* **The Situation:** Section 1 deliberately computes the neuron in the browser for instant slider feedback (lesson 4.1). So why build the endpoint?
+* **Its job is to be the reference:** the same formula computed by PyTorch (`float64`, `torch.sigmoid` etc.) gives a trusted answer to compare the JavaScript against. With the Section 1 defaults it returns `z = 1.0`, `output = 0.7311`, exactly what the page shows (`1.00`, `0.731`). Phase 7 can turn that into an automated cross-check.
+* **Validate relationships, not just fields:** each field has a range, but the important rule spans two fields: *one weight per input*. That's a Pydantic `@model_validator(mode="after")`, so a mismatch is a clear 422 instead of a PyTorch shape error (500) deep inside the route.
+
+---
+
+### 2.9 Verify the Checklist Against Running Code, Not Memory
+* **Phase:** 5 (closing the phase)
+* **The Concept:** Before ticking a phase complete, every item was re-checked by **running** it, in one `TestClient` script: health, neuron math against `math.tanh` / sigmoid, forward-pass shape, start → pause → resume → finish → model saved, 100×100 grid, point prediction, reset, and the 409 empty state.
+* **Introspect, don't eyeball:** "Do *all* endpoints have schemas?" was answered from the generated OpenAPI spec (`app.openapi()`), which lists each operation's request and response model. That's the same source `/docs` uses, so it can't disagree with what clients see.
+* **Debugging note:** a first attempt looped over `app.routes` looking for `APIRoute` objects and printed *nothing*. This FastAPI version stores included routers as lazy wrappers. An empty result is not a pass: a check that can't fail isn't a check. Switching to the OpenAPI spec gave a real answer.
+* **Honest ticking:** an earlier pass had ticked "schemas for all endpoints" before neuron/health existed; it was unticked until it was actually true.
 
 ---
 

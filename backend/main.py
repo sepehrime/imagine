@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import boundary, forward_pass, train
+from routers import boundary, forward_pass, health, neuron, train
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -38,23 +38,11 @@ app.add_middleware(
 # -----------------------------------------------------------------------------
 # Routers: one per section, each owning its own /api/<section> prefix
 # -----------------------------------------------------------------------------
+app.include_router(health.router)
+app.include_router(neuron.router)
 app.include_router(forward_pass.router)
 app.include_router(train.router)
 app.include_router(boundary.router)
-
-
-@app.get("/health", tags=["System"])
-def health_check():
-    """
-    Health check endpoint to verify that the API server is up and responsive.
-    Note: We declare this as a standard synchronous function (`def`) or async (`async def`).
-    Since this is a lightweight in-memory return, either is fast.
-    """
-    return {
-        "status": "ok",
-        "service": "how-ai-works-backend",
-        "version": "0.1.0",
-    }
 
 
 if __name__ == "__main__":

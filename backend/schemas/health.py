@@ -1,0 +1,11 @@
+"""Response model for GET /health."""
+
+from typing import Literal
+
+from pydantic import BaseModel
+
+
+class HealthResponse(BaseModel):
+    status: Literal["ok"]
+    service: str
+    version: str
