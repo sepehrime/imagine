@@ -48,6 +48,14 @@
    - [3.22 Precompute Static Data Outside the Component](#322-precompute-static-data-outside-the-component)
    - [3.23 Isolating Business Rules in Pure Functions (`suggestNextSection`)](#323-isolating-business-rules-in-pure-functions-suggestnextsection)
 
+4. [Interactive Visualizations (Phase 4)](#4-interactive-visualizations-phase-4)
+   - [4.1 Compute on the Client When the Math Is Cheap](#41-compute-on-the-client-when-the-math-is-cheap)
+   - [4.2 The Strategy Pattern for Swappable Algorithms (`ACTIVATIONS`)](#42-the-strategy-pattern-for-swappable-algorithms-activations)
+   - [4.3 "D3 for Math, React for DOM"](#43-d3-for-math-react-for-dom)
+   - [4.4 Replaying Animations with a Changing `key`](#44-replaying-animations-with-a-changing-key)
+   - [4.5 Normalising Values with Different Ranges (Min-Max Scaling)](#45-normalising-values-with-different-ranges-min-max-scaling)
+   - [4.6 Theme-Aware SVG: Tailwind Classes & CSS Variables](#46-theme-aware-svg-tailwind-classes--css-variables)
+
 ---
 
 ## 1. Architecture, Git, and Project Hygiene
@@ -493,6 +501,90 @@ In professional engineering, choosing a framework is documented as an **Architec
   const next = sections.find((section) => !completedIds.includes(section.id));
   return next ? next.id : null;
   ```
+
+---
+
+## 4. Interactive Visualizations (Phase 4)
+
+### 4.1 Compute on the Client When the Math Is Cheap
+* **Phase:** 4 (Section 1)
+* **The Concept:** The plan has a `/api/neuron/compute` endpoint, but one neuron is three multiplications and an exponent. Calling the backend on every slider tick would add network latency (and dozens of requests per second while dragging) for work the browser does in microseconds.
+* **Decision Guide:**
+
+| Work is… | Where it runs |
+| :--- | :--- |
+| Cheap, needs instant feedback (one neuron) | Browser |
+| Heavy or needs PyTorch/state (training, boundary grid) | Backend |
+
+* **Takeaway:** "Where does this run?" is an architecture decision, not a default. The backend endpoint can still be built later as a cross-check for the frontend math.
+
+---
+
+### 4.2 The Strategy Pattern for Swappable Algorithms (`ACTIVATIONS`)
+* **Phase:** 4 (Section 1)
+* **The Concept:** Each activation function is a *strategy* object in one lookup table, looked up by key:
+  ```javascript
+  export const ACTIVATIONS = {
+    relu:    { label: "ReLU",    fn: (z) => Math.max(0, z),        yDomain: [0, Z_LIMIT] },
+    sigmoid: { label: "Sigmoid", fn: (z) => 1 / (1 + Math.exp(-z)), yDomain: [0, 1] },
+    tanh:    { label: "Tanh",    fn: (z) => Math.tanh(z),           yDomain: [-1, 1] },
+  };
+  const output = ACTIVATIONS[activation].fn(z);
+  ```
+* **Why It Matters:** The dropdown options, the chart's y-axis, the glow mapping and the math all read from the same entry. Adding "Leaky ReLU" means adding one object, with no `if/else` or `switch` scattered across components (the Open/Closed Principle: open for extension, closed for modification).
+
+---
+
+### 4.3 "D3 for Math, React for DOM"
+* **Phase:** 4 (Section 1)
+* **The Concept:** D3 and React both want to own the DOM. Mixing `d3.select(...).append(...)` with React rendering leads to elements React doesn't know about and stale updates. The clean split: use D3 only for **calculations** (scales, path strings) and let React render the SVG elements.
+  ```javascript
+  const x = scaleLinear().domain([-8, 8]).range([34, 386]); // pure function
+  const d = line().x(([z]) => x(z)).y(([, v]) => y(v))(points); // returns a string
+  return <path d={d} />; // React owns the element
+  ```
+* **Bonus:** The curve only depends on the activation, so it's wrapped in `useMemo(..., [fn, yDomain])` and isn't recomputed while sliders move.
+
+---
+
+### 4.4 Replaying Animations with a Changing `key`
+* **Phase:** 4 (Section 1)
+* **The Concept:** A Framer Motion `initial → animate` transition plays once, on mount. To replay the "data flows" animation on every change, the page keeps a counter and uses it as the `key` of the pulse group:
+  ```javascript
+  const [pulseKey, setPulseKey] = useState(0);
+  const pulse = () => setPulseKey((k) => k + 1);
+  // in NeuronDiagram:
+  <g key={pulseKey}>{/* motion.circle pulses */}</g>
+  ```
+* **Why It Works:** When a `key` changes, React treats it as a *different* element: it unmounts the old one and mounts a fresh one, so the animation starts from `initial` again. No refs or imperative `.start()` calls needed.
+* **Reminder:** The pulses are skipped entirely under `useReducedMotion()` (see 3.21).
+
+---
+
+### 4.5 Normalising Values with Different Ranges (Min-Max Scaling)
+* **Phase:** 4 (Section 1)
+* **The Problem:** The output node's glow needs a 0 → 1 intensity, but each activation produces a different range: Sigmoid 0 → 1, Tanh −1 → 1, ReLU 0 → 8.
+* **The Solution:** Min-max scaling using each strategy's `yDomain`, then clamp:
+  ```javascript
+  const [min, max] = ACTIVATIONS[activation].yDomain;
+  const t = (output - min) / (max - min);
+  return Math.min(1, Math.max(0, t));
+  ```
+* **Design Decision:** Always map into [0, 1] with "brighter = higher" for every activation (so Tanh −1 is dark, not bright). The clamp is a defensive guard: if a slider range changes and the output exceeds `yDomain`, the glow still stays valid.
+* **Trade-off noted:** With linear scaling, typical ReLU outputs (0–3) look fairly dim. A curve like `1 - Math.exp(-x)` would brighten small values, at the cost of consistency.
+
+---
+
+### 4.6 Theme-Aware SVG: Tailwind Classes & CSS Variables
+* **Phase:** 4 (Section 1)
+* **The Concept:** SVG attributes like `fill` and `stroke` can be styled with Tailwind utilities (`fill-slate-900 dark:fill-white`), so the diagram follows dark mode like the rest of the app.
+* **The Halo Trick:** Weight labels sat on top of their edges and were hard to read. The fix is a text outline in the *background* colour, drawn behind the glyphs:
+  ```jsx
+  <svg className="[--halo:#fff] dark:[--halo:#0f172a]">
+    <text color="var(--halo)" stroke="currentColor" strokeWidth={4} paintOrder="stroke" />
+  ```
+  `paint-order: stroke` paints the outline first and the fill on top, and the CSS variable switches the halo colour with the theme.
+* **Debugging Lesson:** A chart drawn on a small `viewBox` (280 wide) but displayed in a wide card is scaled up, *including its text*. Size the `viewBox` close to the rendered size so fonts stay proportionate.
 
 ---
 

@@ -133,25 +133,25 @@ Python (FastAPI) backend.
 
 **Page:** `src/pages/Neuron.jsx`
 
-- [ ] Concept explainer:
-  - [ ] Plain-language description: a neuron takes inputs, multiplies by weights, adds a bias, and produces an output
-  - [ ] Visual analogy: compare to a human decision (e.g., deciding to bring an umbrella)
-- [ ] Interactive animated diagram:
-  - [ ] Show a single neuron with 3 input nodes and 1 output node
-  - [ ] Inputs (x₁, x₂, x₃) displayed as labeled circles
-  - [ ] Weighted edges rendered as animated lines with thickness = weight magnitude
-  - [ ] Weight slider for each input (range -2.0 to 2.0, step 0.1)
-  - [ ] Bias slider (range -2.0 to 2.0)
-  - [ ] Activation function selector: ReLU, Sigmoid, Tanh (dropdown)
-  - [ ] Output value updates in real-time as user changes sliders
-  - [ ] Output node glows brighter as output value increases
-  - [ ] Display the math formula: `output = activation(w₁x₁ + w₂x₂ + w₃x₃ + b)`
-  - [ ] Animate the "flow" of data from inputs to output on each change
-- [ ] Show activation function graph:
-  - [ ] Small inline chart showing the shape of the selected activation function
-  - [ ] A dot on the curve showing where the current output lands
-- [ ] Key Takeaway card: summarize what a neuron does in 2 sentences
-- [ ] "Mark as Complete" button
+- [x] Concept explainer:
+  - [x] Plain-language description: a neuron takes inputs, multiplies by weights, adds a bias, and produces an output
+  - [x] Visual analogy: compare to a human decision (e.g., deciding to bring an umbrella)
+- [x] Interactive animated diagram:
+  - [x] Show a single neuron with 3 input nodes and 1 output node
+  - [x] Inputs (x₁, x₂, x₃) displayed as labeled circles
+  - [x] Weighted edges rendered as animated lines with thickness = weight magnitude
+  - [x] Weight slider for each input (range -2.0 to 2.0, step 0.1)
+  - [x] Bias slider (range -2.0 to 2.0)
+  - [x] Activation function selector: ReLU, Sigmoid, Tanh (dropdown)
+  - [x] Output value updates in real-time as user changes sliders
+  - [x] Output node glows brighter as output value increases
+  - [x] Display the math formula: `output = activation(w₁x₁ + w₂x₂ + w₃x₃ + b)`
+  - [x] Animate the "flow" of data from inputs to output on each change
+- [x] Show activation function graph:
+  - [x] Small inline chart showing the shape of the selected activation function
+  - [x] A dot on the curve showing where the current output lands
+- [x] Key Takeaway card: summarize what a neuron does in 2 sentences
+- [x] "Mark as Complete" button
 
 ---
 
