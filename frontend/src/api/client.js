@@ -56,3 +56,40 @@ export async function runForwardPass({ architecture, inputs, activation, seed },
   );
   return data;
 }
+
+/** GET /api/train/datasets/{name} */
+export async function getDataset(name, { signal } = {}) {
+  const { data } = await api.get(`/api/train/datasets/${name}`, { signal });
+  return data;
+}
+
+/** POST /api/train/start → first status snapshot (includes training_id) */
+export async function startTraining({ dataset, learningRate, epochs, hiddenSize }) {
+  const { data } = await api.post("/api/train/start", {
+    dataset,
+    learning_rate: learningRate,
+    epochs,
+    hidden_size: hiddenSize,
+  });
+  return data;
+}
+
+/** GET /api/train/status/{id}?since=N → only the epochs after index N */
+export async function getTrainingStatus(trainingId, since, { signal } = {}) {
+  const { data } = await api.get(`/api/train/status/${trainingId}`, { params: { since }, signal });
+  return data;
+}
+
+export async function pauseTraining() {
+  const { data } = await api.post("/api/train/pause");
+  return data;
+}
+
+export async function resumeTraining() {
+  const { data } = await api.post("/api/train/resume");
+  return data;
+}
+
+export async function resetTraining() {
+  await api.post("/api/train/reset");
+}

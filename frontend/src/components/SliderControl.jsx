@@ -24,6 +24,7 @@ export default function SliderControl({
   format = (v) => v.toFixed(1),
   hint,
   accent = "accent-blue-600",
+  disabled = false,
 }) {
   const id = useId();
 
@@ -48,7 +49,8 @@ export default function SliderControl({
         step={step}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className={`w-full h-2 cursor-pointer ${accent}`}
+        disabled={disabled}
+        className={`w-full h-2 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 ${accent}`}
       />
     </div>
   );

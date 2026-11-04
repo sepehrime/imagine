@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import forward_pass
+from routers import forward_pass, train
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
 
@@ -39,6 +39,7 @@ app.add_middleware(
 # Routers: one per section, each owning its own /api/<section> prefix
 # -----------------------------------------------------------------------------
 app.include_router(forward_pass.router)
+app.include_router(train.router)
 
 
 @app.get("/health", tags=["System"])

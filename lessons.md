@@ -65,6 +65,12 @@
    - [4.14 Async UI Safety: Cancellation, State Machines & Stale Results](#414-async-ui-safety-cancellation-state-machines--stale-results)
    - [4.15 Timer-Driven Animation with `useEffect` Cleanup](#415-timer-driven-animation-with-useeffect-cleanup)
    - [4.16 `white-space: nowrap` Swallowed the Line Break (Debugging Lesson)](#416-white-space-nowrap-swallowed-the-line-break-debugging-lesson)
+   - [4.17 Background Threads in a Web Server: Locks, Events & Snapshots](#417-background-threads-in-a-web-server-locks-events--snapshots)
+   - [4.18 Polling Done Right: `setTimeout` Chains & Incremental Sync](#418-polling-done-right-settimeout-chains--incremental-sync)
+   - [4.19 Shared App State: "Current Run" vs. "Last Good Model"](#419-shared-app-state-current-run-vs-last-good-model)
+   - [4.20 Failing Loudly in Worker Threads (and the NaN-in-JSON Trap)](#420-failing-loudly-in-worker-threads-and-the-nan-in-json-trap)
+   - [4.21 Log-Scale Sliders](#421-log-scale-sliders)
+   - [4.22 Chart Hygiene: One Measure per Chart & Redundant Encoding](#422-chart-hygiene-one-measure-per-chart--redundant-encoding)
 
 ---
 
@@ -731,6 +737,74 @@ In professional engineering, choosing a framework is documented as an **Architec
   <span className="whitespace-nowrap">({w})({a})</span>
   ```
 * **Lesson:** `overflow: auto/hidden` can hide a layout bug instead of revealing it. Test with the *largest* realistic data (here: 6 inputs), not the default.
+
+---
+
+### 4.17 Background Threads in a Web Server: Locks, Events & Snapshots
+* **Phase:** 4 (Section 4) / Phase 5.5
+* **The Problem:** Training takes seconds; an HTTP request must answer in milliseconds. So `/api/train/start` launches a **background thread** and returns immediately. Now two threads touch the same `TrainingSession`: the trainer *writes* metrics every epoch, request threads *read* them for `/status`.
+* **The Tools (`utils/trainer.py`):**
+  * `threading.Lock`: every shared field (`status`, `epoch`, `history`, `weights`) is read and written inside `with self._lock:`, so a reader never sees a half-updated state (e.g. a new epoch number with the old loss).
+  * **Snapshots:** `snapshot()` copies the state *under the lock* and returns plain data. The lock is held for microseconds and the HTTP layer never touches live objects.
+  * `threading.Event` for control: pause = `_resume.clear()`, and the loop calls `_resume.wait()`, which *blocks* (0% CPU) instead of spinning on `while paused: sleep()`. Stop uses `_stop.wait(pace)` as an interruptible sleep, so Reset takes effect immediately.
+* **Pacing:** Real training on 300 points takes milliseconds per epoch, too fast to watch. Each epoch is padded to ~8 seconds per run in total. That's a deliberate teaching choice, documented as a constant, not a hidden `sleep`.
+* **Semantics to note:** pause takes effect *between* epochs, so one more epoch may finish after you click Pause.
+
+---
+
+### 4.18 Polling Done Right: `setTimeout` Chains & Incremental Sync
+* **Phase:** 4 (Section 4)
+* **`setTimeout` chain, not `setInterval`:** `setInterval(poll, 200)` fires every 200 ms *even if the last request hasn't returned*. On a slow network requests overlap and can arrive out of order. A chain schedules the next poll only after the previous response:
+  ```javascript
+  const tick = async () => {
+    const status = await getTrainingStatus(id, sinceRef.current, { signal });
+    apply(status);
+    if (status.status === "running") timer = setTimeout(tick, POLL_MS);
+  };
+  ```
+* **Incremental sync (`?since=N`):** the client says "I have N epochs" and the server returns only newer ones. Payloads stay tiny for a 500-epoch run, and the same merge function handles full snapshots (start/pause responses) by slicing off what it already has.
+* **Lifecycle-bound:** the loop lives in a `useEffect` keyed on `[trainingId, isRunning]`. Pausing, finishing, starting a new run or leaving the page runs the cleanup (`clearTimeout` + `abort()`), so no orphan loops.
+* **Alternatives considered:** WebSockets or Server-Sent Events would *push* updates instead of the client asking. They're better at scale, but polling is simpler, stateless, and the plan's requirement.
+
+---
+
+### 4.19 Shared App State: "Current Run" vs. "Last Good Model"
+* **Phase:** 5.7
+* **The Concept:** `state.py` holds one process-wide `app_state` with two slots:
+  * `session`: the current (or latest) run, used by `/api/train/*`.
+  * `trained`: the last run that **finished successfully**, used by Section 5.
+* **Why two slots?** If Section 5 read `session` directly, it would see a half-trained model while a new run is in progress, or nothing after a failed run. Promoting a model only on success (via an `on_complete` callback) means Section 5 always gets a complete one.
+* **Race guard:** `_set_trained` only promotes the session if it's *still* the current one, so a run that was replaced while finishing can't overwrite the newer state.
+* **Limitation (by design):** state lives in memory, so restarting the server (including `--reload` after a code change) forgets the model. Fine for a local teaching app; a real service would persist models to disk or a database.
+
+---
+
+### 4.20 Failing Loudly in Worker Threads (and the NaN-in-JSON Trap)
+* **Phase:** 4 (Section 4)
+* **Silent thread death:** an exception inside a `threading.Thread` doesn't reach the HTTP client. It prints a traceback and the thread ends, so the UI would poll "running" forever. The training loop catches errors and records them as `status = "error"` plus a message, which the page shows.
+* **The NaN trap:** a too-high learning rate can make the loss `inf`/`NaN`. Python's `json` can't produce valid JSON for those (FastAPI raises, so every `/status` poll returns 500). The loop checks `math.isfinite(loss)` and stops with a friendly "Training diverged, try a smaller learning rate" instead.
+* **Lesson:** Anything that crosses a boundary (thread → HTTP, Python → JSON) needs its failure modes handled at that boundary.
+
+---
+
+### 4.21 Log-Scale Sliders
+* **Phase:** 4 (Section 4)
+* **The Problem:** Learning rates from 0.001 to 1.0 span three orders of magnitude. A linear slider would put 0.001–0.1 in the first 10% of the track, so the most interesting values would be nearly impossible to pick.
+* **The Adapter:** The slider moves over integer *positions* 0–60; positions map to `10^(−3 + p/20)`, so each ×10 decade gets 20 equal steps:
+  ```javascript
+  const positionToLr = (p) => Number((10 ** (-3 + p / 20)).toPrecision(2));
+  // 0 → 0.001, 20 → 0.01, 40 → 0.1, 60 → 1
+  ```
+* **`toPrecision(2)`** turns floating-point noise like `0.09999999` into a clean `0.1` for display *and* for the request.
+
+---
+
+### 4.22 Chart Hygiene: One Measure per Chart & Redundant Encoding
+* **Phase:** 4 (Section 4)
+* **One measure per chart:** loss (0–0.8) and accuracy (0–100%) have unrelated scales. Two y-axes on one chart invite false conclusions ("they cross at epoch 50!"), so they get two side-by-side charts.
+* **Live data:** Recharts' entry animation is turned off (`isAnimationActive={false}`); with a new point every 200 ms it would restart constantly.
+* **Validate colours, don't eyeball them:** the class colours were run through a colour-blindness validator for light and dark mode. One colour was below 3:1 contrast, so every class also gets a **shape** (circle / square / triangle) and a named legend. Colour is never the only cue.
+* **Text in text colours:** the tooltip value was first drawn in the line's blue; it now uses normal text ink. Colour marks identify series, text stays readable.
 
 ---
 

@@ -223,36 +223,36 @@ Python (FastAPI) backend.
 
 **Page:** `src/pages/Train.jsx`
 
-- [ ] Concept explainer:
-  - [ ] Explain training: show examples, compare output to correct answer, adjust weights
-  - [ ] Explain loss: how wrong the network is
-  - [ ] Explain gradient descent: nudging weights in the right direction
-  - [ ] Explain epochs: one full pass through the dataset
-- [ ] Dataset selector:
-  - [ ] Option A: XOR problem (classic non-linear problem)
-  - [ ] Option B: Circle vs Square (2-class 2D dataset)
-  - [ ] Option C: Three clusters (3-class 2D dataset)
-  - [ ] Show a small preview scatter plot of the selected dataset
-- [ ] Training controls:
-  - [ ] Slider: learning rate (0.001 – 1.0, log scale)
-  - [ ] Slider: number of epochs (10 – 500)
-  - [ ] Slider: hidden layer size (2 – 16 neurons)
-  - [ ] "Start Training" button
-  - [ ] "Pause" and "Reset" buttons
-- [ ] Live visualizations during training:
-  - [ ] **Loss curve chart** (Recharts): loss value vs epoch, animates in real-time
-  - [ ] **Accuracy chart** (Recharts): accuracy vs epoch, updates alongside loss
-  - [ ] **Network diagram**: edge thickness updates to reflect current weights (rescaled)
-  - [ ] **Epoch counter**: large number showing current epoch / total epochs
-  - [ ] **Status label**: "Training…", "Paused", "Done ✓"
-- [ ] Training runs in backend with polling:
-  - [ ] Backend trains model epoch by epoch and stores metrics
-  - [ ] Frontend polls `/api/train/status` every ~200ms during training
-- [ ] After training completes:
-  - [ ] Show final loss and accuracy prominently
-  - [ ] Show "Training Complete 🎉" message
-  - [ ] Enable "View Decision Boundary" button → navigates to Section 5
-- [ ] Key Takeaway card + "Mark as Complete" button
+- [x] Concept explainer:
+  - [x] Explain training: show examples, compare output to correct answer, adjust weights
+  - [x] Explain loss: how wrong the network is
+  - [x] Explain gradient descent: nudging weights in the right direction
+  - [x] Explain epochs: one full pass through the dataset
+- [x] Dataset selector:
+  - [x] Option A: XOR problem (classic non-linear problem)
+  - [x] Option B: Circle vs Square (2-class 2D dataset)
+  - [x] Option C: Three clusters (3-class 2D dataset)
+  - [x] Show a small preview scatter plot of the selected dataset
+- [x] Training controls:
+  - [x] Slider: learning rate (0.001 – 1.0, log scale)
+  - [x] Slider: number of epochs (10 – 500)
+  - [x] Slider: hidden layer size (2 – 16 neurons)
+  - [x] "Start Training" button
+  - [x] "Pause" and "Reset" buttons
+- [x] Live visualizations during training:
+  - [x] **Loss curve chart** (Recharts): loss value vs epoch, animates in real-time
+  - [x] **Accuracy chart** (Recharts): accuracy vs epoch, updates alongside loss
+  - [x] **Network diagram**: edge thickness updates to reflect current weights (rescaled)
+  - [x] **Epoch counter**: large number showing current epoch / total epochs
+  - [x] **Status label**: "Training…", "Paused", "Done ✓"
+- [x] Training runs in backend with polling:
+  - [x] Backend trains model epoch by epoch and stores metrics
+  - [x] Frontend polls `/api/train/status` every ~200ms during training
+- [x] After training completes:
+  - [x] Show final loss and accuracy prominently
+  - [x] Show "Training Complete 🎉" message
+  - [x] Enable "View Decision Boundary" button → navigates to Section 5
+- [x] Key Takeaway card + "Mark as Complete" button
 
 ---
 
@@ -293,11 +293,11 @@ Python (FastAPI) backend.
   - [ ] `routers/health.py`
   - [ ] `routers/neuron.py` — single neuron computation
   - [x] `routers/forward_pass.py` — full network forward pass
-  - [ ] `routers/train.py` — training loop with polling
+  - [x] `routers/train.py` — training loop with polling
   - [ ] `routers/boundary.py` — decision boundary grid + point prediction
 - [x] `backend/models/network.py` — PyTorch network class (configurable architecture)
 - [ ] `backend/schemas/` — Pydantic request/response models for all endpoints
-- [ ] `backend/state.py` — shared app state to hold the trained model between requests
+- [x] `backend/state.py` — shared app state to hold the trained model between requests
 - [ ] `backend/utils/` — helper functions (weight extraction, boundary grid generation)
 
 ### 5.2 Health Check
@@ -317,16 +317,16 @@ Python (FastAPI) backend.
   - [x] Returns: `node_activations` (per layer), `weights` (per edge), `output` (final values)
 
 ### 5.5 Training Endpoints (Section 4)
-- [ ] `POST /api/train/start`
-  - [ ] Input: `dataset` (name), `learning_rate` (float), `epochs` (int), `hidden_size` (int)
-  - [ ] Generates the selected dataset (using scikit-learn)
-  - [ ] Trains a PyTorch model in a background thread
-  - [ ] Saves trained model to backend app state
-  - [ ] Returns a `training_id` string
-- [ ] `GET /api/train/status/{training_id}`
-  - [ ] Returns current epoch, loss, accuracy (for polling)
-- [ ] `POST /api/train/pause` — pauses the training loop
-- [ ] `POST /api/train/reset` — clears the current training session and model
+- [x] `POST /api/train/start`
+  - [x] Input: `dataset` (name), `learning_rate` (float), `epochs` (int), `hidden_size` (int)
+  - [x] Generates the selected dataset (using scikit-learn)
+  - [x] Trains a PyTorch model in a background thread
+  - [x] Saves trained model to backend app state
+  - [x] Returns a `training_id` string
+- [x] `GET /api/train/status/{training_id}`
+  - [x] Returns current epoch, loss, accuracy (for polling)
+- [x] `POST /api/train/pause` — pauses the training loop
+- [x] `POST /api/train/reset` — clears the current training session and model
 
 ### 5.6 Boundary Endpoints (Section 5)
 - [ ] `GET /api/boundary/grid`
@@ -338,10 +338,10 @@ Python (FastAPI) backend.
   - [ ] Returns: predicted class, confidence score
 
 ### 5.7 Model & State Management
-- [ ] Store training state (model, optimizer, epoch count) in a global `AppState` object
-- [ ] Use Python background thread for the training loop
+- [x] Store training state (model, optimizer, epoch count) in a global `AppState` object
+- [x] Use Python background thread for the training loop
 - [ ] Gracefully handle "no model trained yet" with a clear error response
-- [ ] Log all endpoint calls and training progress to the console
+- [x] Log all endpoint calls and training progress to the console
 
 ---
 
