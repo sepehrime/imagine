@@ -29,6 +29,13 @@ ACTIVATIONS = {
 
 @router.post("/compute", response_model=NeuronResponse)
 def compute_neuron(req: NeuronRequest) -> NeuronResponse:
+    """
+    Computes one neuron's output for the given inputs, weights, bias and activation.
+
+    Also returns each input's contribution (wᵢ·xᵢ), which is how the page shows
+    which input pushed the result up or down.
+    """
+    # float64 so results match the browser's JavaScript numbers exactly
     x = torch.tensor(req.inputs, dtype=torch.float64)
     w = torch.tensor(req.weights, dtype=torch.float64)
     contributions = x * w

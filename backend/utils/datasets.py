@@ -19,6 +19,8 @@ SEED = 7
 
 @dataclass(frozen=True)
 class Dataset:
+    """A 2D classification dataset: points `X` and their class labels `y`."""
+
     name: str
     label: str
     class_names: list[str]

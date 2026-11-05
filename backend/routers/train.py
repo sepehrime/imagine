@@ -46,6 +46,13 @@ def training_status(
     training_id: str,
     since: int = Query(0, ge=0, description="Only return history entries from this index on."),
 ) -> TrainingStatus:
+    """
+    Progress of a run: status, current epoch, loss, accuracy and weights.
+
+    Poll with `?since=<entries you already have>` to receive only new epochs,
+    so each response stays small however long the run is. 404 if the run was
+    reset or replaced by a newer one.
+    """
     session = app_state.get_session(training_id)
     if not session:
         raise HTTPException(404, "No training run with this id. It may have been reset or replaced.")
@@ -53,6 +60,7 @@ def training_status(
 
 
 def _require_current():
+    """The current run, or a 409 if nothing has been started (or it was reset)."""
     session = app_state.current_session()
     if not session:
         raise HTTPException(409, "There is no training run. Start one first.")
@@ -61,6 +69,7 @@ def _require_current():
 
 @router.post("/pause", response_model=TrainingStatus)
 def pause_training() -> TrainingStatus:
+    """Pauses the current run after its current epoch. 409 unless it's running."""
     session = _require_current()
     if not session.pause():
         raise HTTPException(409, f"Can't pause: training is {session.status}.")
@@ -69,6 +78,7 @@ def pause_training() -> TrainingStatus:
 
 @router.post("/resume", response_model=TrainingStatus)
 def resume_training() -> TrainingStatus:
+    """Continues a paused run from where it stopped. 409 unless it's paused."""
     session = _require_current()
     if not session.resume():
         raise HTTPException(409, f"Can't resume: training is {session.status}.")

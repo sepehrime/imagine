@@ -11,7 +11,7 @@ import logging
 import numpy as np
 from fastapi import APIRouter, HTTPException, Query
 
-from schemas.boundary import BoundaryGrid, ModelInfo, PointPrediction, PointRequest
+from schemas.boundary import BoundaryGrid, BoundaryStatus, ModelInfo, PointPrediction, PointRequest
 from state import app_state
 from utils.boundary import GRID_RESOLUTION, grid_points, predict
 from utils.trainer import TrainConfig
@@ -27,6 +27,7 @@ DEFAULT_CONFIG = TrainConfig(dataset="xor", learning_rate=0.3, epochs=200, hidde
 
 
 def _session_or_409(training_id: str | None):
+    """The run to draw (see `AppState.boundary_session`), or a 409 if there's no model."""
     session = app_state.boundary_session(training_id)
     if not session:
         # 409 Conflict: the request is fine, but the server isn't in a state to answer it yet
@@ -35,6 +36,7 @@ def _session_or_409(training_id: str | None):
 
 
 def _model_info(session, epoch: int) -> ModelInfo:
+    """Summary of the model being shown: its settings and how far it has trained."""
     cfg = session.config
     return ModelInfo(
         training_id=session.id,
@@ -49,15 +51,35 @@ def _model_info(session, epoch: int) -> ModelInfo:
     )
 
 
+@router.get("/status", response_model=BoundaryStatus)
+def boundary_status() -> BoundaryStatus:
+    """
+    Is there a trained model to draw? Always 200, so a page can check before
+    asking for the grid (a 409 from /grid would show up as a console error).
+    """
+    session = app_state.boundary_session()
+    if not session:
+        return BoundaryStatus(has_model=False)
+    return BoundaryStatus(has_model=True, model=_model_info(session, session.snapshot()["epoch"]))
+
+
 @router.get("/grid", response_model=BoundaryGrid)
 def boundary_grid(
     training_id: str | None = Query(None, description="Show this (possibly still running) run's model."),
 ) -> BoundaryGrid:
+    """
+    The model's prediction and confidence at every cell of a 100×100 grid over
+    [-1, 1]², plus the training points and which of them it gets wrong.
+
+    Without `training_id` this uses the last finished model. 409 if there is none.
+    """
+    # Read the epoch and copy the model up front, so both describe the same moment
+    # even if a training thread is still updating the live model
     session = _session_or_409(training_id)
     epoch = session.snapshot()["epoch"]
     model = session.frozen_model()
 
-    grid_pred, grid_conf, _ = predict(model, grid_points())
+    grid_pred, grid_conf, _ = predict(model, grid_points())  # 10,000 predictions in one batch
     data = session.dataset
     point_pred, _, _ = predict(model, data.X)
 
@@ -75,6 +97,7 @@ def boundary_grid(
 
 @router.post("/predict-point", response_model=PointPrediction)
 def predict_point(req: PointRequest) -> PointPrediction:
+    """Classifies one (x, y) point and returns the probability of every class."""
     session = _session_or_409(req.training_id)
     pred, conf, probs = predict(session.frozen_model(), np.array([[req.x, req.y]], dtype=np.float32))
     cls = int(pred[0])

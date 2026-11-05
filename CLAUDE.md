@@ -18,13 +18,16 @@ Frontend (run from `frontend/`):
 Backend (run from `backend/`, with `venv/` activated via `source venv/bin/activate`):
 - `uvicorn main:app --reload --port 8000` — API server; Swagger docs at `/docs`, health check at `/health`
 
-No test suite exists yet in either half (planned in `plan.md` Phase 7; backend tests are intended to use FastAPI's `TestClient`).
+Tests:
+- Backend (from `backend/`, venv active): `python -m pytest` — FastAPI `TestClient` tests in `tests/` (dev deps in `requirements-dev.txt`)
+- Frontend unit (from `frontend/`): `npm test` — Vitest, files `src/**/*.test.js`
+- End-to-end (from `frontend/`): `npm run test:e2e` — Playwright in `e2e/`; starts its own backend on :8765 and frontend on :5199, so it won't touch dev servers
 
 ## Architecture
 
-**Frontend ↔ backend wiring.** Vite proxies `/api/*` to `http://localhost:8000` (`vite.config.js`), so frontend code should call relative `/api/...` paths. The backend also enables CORS for ports 5173/5174 in `main.py`. All planned endpoints live under `/api/<section>/...` (see `plan.md` Phase 5); only `/health` exists today.
+**Frontend ↔ backend wiring.** Vite proxies `/api/*` to `http://localhost:8000` (`vite.config.js`), so frontend code should call relative `/api/...` paths. The backend also enables CORS for ports 5173/5174 in `main.py`. Every endpoint lives under `/api/<section>/...` except `/health`; all backend calls go through `src/api/client.js`. The README has an endpoint table, and `/docs` has the full schemas.
 
-**Backend (current vs. planned).** Today it's just `main.py`. The README and `plan.md` describe the target layout: `routers/` (one per section), `schemas/` (Pydantic request/response models), `models/network.py` (configurable PyTorch net), `utils/`, and `state.py` holding a global `AppState` so a model trained in Section 4 (`/api/train/*`, runs in a background thread, frontend polls status) is reused by Section 5 (`/api/boundary/*`). Keep CPU-heavy ML work off the async event loop.
+**Backend layout.** `main.py` only wires logging, CORS and routers. `routers/` (one per section, HTTP only), `schemas/` (Pydantic request/response models; docstrings and `Field` descriptions feed `/docs`), `models/network.py` (`ConfigurableNetwork`), `utils/` (`trainer.py` training loop, `datasets.py`, `boundary.py`), and `state.py` holding a global `AppState` so a model trained in Section 4 (`/api/train/*`, runs in a background thread, frontend polls status) is reused by Section 5 (`/api/boundary/*`). Keep CPU-heavy ML work off the async event loop: PyTorch handlers are plain `def`. `TRAINING_TARGET_SECONDS` (default 8) sets how long a paced training run takes; tests set it to 0 or 2.
 
 **Frontend app shell.** `App.jsx` sets up `BrowserRouter` → `ScrollToTop` → `ThemeProvider` → `MainLayout` (persistent Header/Footer, shared `max-w-7xl` container) → `Routes`. Pages in `src/pages/` should not re-add page-level padding/containers.
 

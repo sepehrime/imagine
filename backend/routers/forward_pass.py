@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api/forward-pass", tags=["Forward Pass"])
 
 
 def _layer_name(index: int, count: int) -> str:
+    """Human-readable label for layer `index` of a `count`-layer network."""
     if index == 0:
         return "Input layer"
     if index == count - 1:
@@ -31,16 +32,24 @@ def _layer_name(index: int, count: int) -> str:
 # PyTorch work never blocks the event loop (see lessons 2.4).
 @router.post("/run", response_model=ForwardPassResponse)
 def run_forward_pass(req: ForwardPassRequest) -> ForwardPassResponse:
+    """
+    Builds a network for `architecture` (weights seeded by `seed`), runs `inputs`
+    through it and returns every layer's values, plus all weights and biases.
+
+    The same seed always gives the same weights, so the frontend can replay a pass.
+    """
     logger.info("forward-pass: architecture=%s activation=%s seed=%s", req.architecture, req.activation, req.seed)
 
     model = ConfigurableNetwork(req.architecture, req.activation, seed=req.seed)
     x = torch.tensor(req.inputs, dtype=torch.float32)
     trace = model.forward_with_trace(x)
 
+    # Layer 0 is the input itself; it has no weights and no activation function
     count = len(req.architecture)
     layers = [
         LayerTrace(index=0, name=_layer_name(0, count), activation=req.inputs),
     ]
+    # `trace` has one (z, a) pair per non-input layer: z = weighted sums, a = after activation
     last = len(trace) - 1
     for i, (z, a) in enumerate(trace):
         layers.append(
@@ -53,6 +62,7 @@ def run_forward_pass(req: ForwardPassRequest) -> ForwardPassResponse:
             )
         )
 
+    # The prediction is the index of the strongest output node
     output = layers[-1].activation
     return ForwardPassResponse(
         architecture=req.architecture,

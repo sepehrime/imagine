@@ -103,3 +103,12 @@ backend/models/weights/
 
 # Playwright MCP screenshots/logs
 .playwright-mcp/
+
+# ==========================================
+# Test artifacts
+# ==========================================
+frontend/test-results/
+frontend/playwright-report/
+frontend/e2e/.backend.log
+backend/.pytest_cache/
+.playwright-mcp/

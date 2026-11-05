@@ -43,3 +43,8 @@ class PointPrediction(BaseModel):
     class_name: str
     confidence: float
     probabilities: list[float]
+
+
+class BoundaryStatus(BaseModel):
+    has_model: bool = Field(..., description="False until a model has finished training.")
+    model: ModelInfo | None = None

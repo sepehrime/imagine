@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 
 
 class AppState:
+    """
+    Which training runs exist right now. One instance (`app_state`) is shared
+    by every request; `_lock` guards the two references below.
+    """
+
     def __init__(self) -> None:
         self._lock = threading.Lock()
         self.session: TrainingSession | None = None
@@ -36,11 +41,13 @@ class AppState:
         return session
 
     def get_session(self, training_id: str) -> TrainingSession | None:
+        """The current run if it has this id; None for unknown or replaced runs."""
         with self._lock:
             s = self.session
         return s if s and s.id == training_id else None
 
     def current_session(self) -> TrainingSession | None:
+        """The current (or most recent) run, whatever its status."""
         with self._lock:
             return self.session
 
@@ -80,6 +87,7 @@ class AppState:
         logger.info("state: reset")
 
     def _set_trained(self, session: TrainingSession) -> None:
+        """Callback from the training thread when a run finishes successfully."""
         with self._lock:
             # Ignore a run that was replaced while it was finishing
             if self.session is session:

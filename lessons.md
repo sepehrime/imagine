@@ -85,6 +85,19 @@
    - [4.26 Self-Terminating Polling & Derived "After" State](#426-self-terminating-polling--derived-after-state)
    - [4.27 Tailwind Can't See Class Names You Build at Runtime (Debugging Lesson)](#427-tailwind-cant-see-class-names-you-build-at-runtime-debugging-lesson)
 
+5. [Testing & Quality (Phase 7)](#5-testing--quality-phase-7)
+   - [5.1 The Testing Pyramid: Unit, API & End-to-End](#51-the-testing-pyramid-unit-api--end-to-end)
+   - [5.2 Isolated Test Servers & Config via Environment Variables](#52-isolated-test-servers--config-via-environment-variables)
+   - [5.3 Route Mocks That Match Too Much (Debugging Lesson)](#53-route-mocks-that-match-too-much-debugging-lesson)
+   - [5.4 Strict Locators: Ambiguity Is a Test Failure, Not a Guess](#54-strict-locators-ambiguity-is-a-test-failure-not-a-guess)
+   - [5.5 When a Test Fails, Check the Test's Expectation First](#55-when-a-test-fails-check-the-tests-expectation-first)
+
+6. [Documentation (Phase 8)](#6-documentation-phase-8)
+   - [6.1 Docstrings That Do Double Duty: FastAPI's `/docs`](#61-docstrings-that-do-double-duty-fastapis-docs)
+   - [6.2 Comment the *Why*, Not the *What*](#62-comment-the-why-not-the-what)
+   - [6.3 Documentation Drift: Check Every Claim Against the Code](#63-documentation-drift-check-every-claim-against-the-code)
+   - [6.4 Screenshots as Code](#64-screenshots-as-code)
+
 ---
 
 ## 1. Architecture, Git, and Project Hygiene
@@ -979,6 +992,127 @@ In professional engineering, choosing a framework is documented as an **Architec
   { fill: "fill-[#2a78d6] dark:fill-[#3987e5]", stroke: "stroke-[#2a78d6] dark:stroke-[#3987e5]" }
   ```
 * **Rule:** In Tailwind, never concatenate or string-replace class names (`` `bg-${color}-500` ``). Map values to complete class strings instead. This is the same reason the layer colours in Sections 2–4 are written out in lookup tables.
+
+---
+
+## 5. Testing & Quality (Phase 7)
+
+### 5.1 The Testing Pyramid: Unit, API & End-to-End
+* **Phase:** 7
+* **The Concept:** Each layer of tests answers a different question, at a different cost:
+
+| Layer | Tool | Count | Runs in | Answers |
+| :--- | :--- | :--- | :--- | :--- |
+| Unit | Vitest (`src/**/*.test.js`) | 31 | ~0.2 s | Is this pure function right? (`neuronMath`, `architecture`, glossary data) |
+| API | pytest + `TestClient` (`backend/tests/`) | 49 | seconds | Does each endpoint return the right shape, numbers and status codes (incl. 422 / 409)? |
+| End-to-end | Playwright (`frontend/e2e/`) | 25 | ~30 s | Does a real browser, real frontend and real backend work together? |
+
+* **The Pattern:** Put most checks at the cheap bottom of the pyramid; use E2E only for what nothing else can prove (the full journey, carried state between sections, no console errors, layout at 375px / 768px).
+* **Exporting for testability:** `newEntries()` in `useTraining.js` was made `export`ed so its slicing logic is unit-testable without rendering a hook. This is the same idea as 3.23: pure functions are the easiest code to test.
+
+---
+
+### 5.2 Isolated Test Servers & Config via Environment Variables
+* **Phase:** 7
+* **The Problem:** The backend keeps **one shared training state**. If E2E tests ran against your dev server on `:8000`, they would reset your runs, and your runs would break theirs.
+* **The Pattern:** `playwright.config.js` starts its *own* backend on `:8765` and frontend on `:5199`, and runs tests one at a time (`workers: 1`).
+* **12-factor config (see 1.3):** two values became environment variables instead of constants:
+  ```python
+  TARGET_RUN_SECONDS = float(os.getenv("TRAINING_TARGET_SECONDS", "8"))  # tests: 0 or 2
+  ```
+  ```javascript
+  const API_TARGET = process.env.API_TARGET ?? 'http://localhost:8000'  // vite.config.js
+  ```
+  The default keeps normal development unchanged; tests override it without touching code.
+* **Auto fixtures as guards:** `e2e/fixtures.js` fails *any* test that logs a console error, and global teardown fails the run if the backend log contains a Python traceback. Phase 7.3 "no console errors / no unhandled exceptions" is checked on every test, not once by hand.
+
+---
+
+### 5.3 Route Mocks That Match Too Much (Debugging Lesson)
+* **Phase:** 7
+* **Symptom:** the three "backend offline" tests timed out waiting for the "Run Forward Pass" button. The page was blank.
+* **Root Cause:** the mock `page.route("**/api/**", abort)` was meant to block API calls, but in Vite dev mode the browser also loads source files as separate modules, including **`/src/api/client.js`**. The glob matched it, the app's JavaScript never loaded, and nothing rendered.
+* **Fix:** match on the URL *path* instead of a loose glob:
+  ```javascript
+  const isApiCall = (url) => url.pathname.startsWith("/api/");
+  await page.route(isApiCall, (route) => route.abort("connectionrefused"));
+  ```
+* **Rule:** A mock should match exactly the requests you mean. When "everything is broken" after mocking, check what else your pattern caught (the Network tab or a Playwright trace shows it right away).
+
+---
+
+### 5.4 Strict Locators: Ambiguity Is a Test Failure, Not a Guess
+* **Phase:** 7
+* **The Concept:** Playwright locators are **strict**: if `getByText(...)` matches two elements, the action fails instead of picking one. That is a feature, since a test that silently clicks the wrong element gives false confidence.
+* **Cases found:**
+  * `getByRole("link", { name: "Start Exploring" })` matched the hero button **and** four section cards. Fix: `.first()` (the hero comes first in the DOM), with a comment saying why.
+  * `/^output = Sigmoid\(/` matched the formula `Sigmoid(w₁x₁ …)` **and** the computed line `Sigmoid(1.000) = 0.731`. Fix: require a number after the bracket: `/^output = Sigmoid\(-?\d/`.
+  * The "Next Section" button uses the short `SECTIONS_NAV` title ("Forward Pass", "Watch it Learn") while the `<h1>` says "The Forward Pass" / "Watch It Learn". Fix: the helper takes `navTitle` and `heading` separately and matches the link case-insensitively.
+* **Rule:** Prefer roles and accessible names, and make the pattern describe *the one thing* you mean.
+
+---
+
+### 5.5 When a Test Fails, Check the Test's Expectation First
+* **Phase:** 7
+* **Symptom:** the Section 2 test expected `Weights 120` for a 2 → 6 → 6 → 6 → 1 network; the app showed `90`.
+* **Root Cause:** the test's arithmetic was wrong. Weights between layers are `fan_in × fan_out`: `2·6 + 6·6 + 6·6 + 6·1 = 12 + 36 + 36 + 6 = 90`. The comment `6·6·2` was right but had been added up wrong.
+* **Rule:** A failing test means the code and the expectation disagree, and either can be wrong. Recompute the expected value independently (by hand, or with a unit-tested helper) before "fixing" working code to match a bad test. All 6 E2E failures in this phase were test bugs; no app code changed.
+
+---
+
+## 6. Documentation (Phase 8)
+
+### 6.1 Docstrings That Do Double Duty: FastAPI's `/docs`
+* **Phase:** 8
+* **The Concept:** FastAPI builds the OpenAPI spec (and the Swagger UI at `/docs`) from code you already write:
+
+| Source in code | Appears on `/docs` as |
+| :--- | :--- |
+| Route handler docstring | The endpoint's description |
+| `Query(..., description=...)` / `Field(..., description=...)` | Parameter and schema field help text |
+| `APIRouter(tags=["Train"])` + `FastAPI(openapi_tags=[...])` | Grouped sections, each with a description |
+| `response_model=` | The response schema and example |
+
+* **The Pattern:** write the docstring for the *API consumer*: what it returns, and when it fails (`404 if the run was reset`, `409 unless it's running`). One string then serves both people reading the code and people calling the API.
+* **Gotcha found:** a tag in `openapi_tags` only gets its description if the name matches the router's tag exactly. The health router uses `"System"`, so a `"Health"` entry would have shown up as an extra, empty group.
+
+---
+
+### 6.2 Comment the *Why*, Not the *What*
+* **Phase:** 8
+* **The Problem:** `optimizer.zero_grad()  # zero the gradients` repeats the code and teaches nothing.
+* **The Pattern:** comment what the reader *can't* see from the line itself: the reason, the trade-off, or the trap:
+  ```python
+  optimizer.zero_grad()  # gradients add up in PyTorch, so clear last step's
+  # Plain SGD (no momentum) so the learning-rate slider has a clear,
+  # visible effect: too low crawls, too high diverges.
+  optimizer = torch.optim.SGD(self.model.parameters(), lr=cfg.learning_rate)
+  ```
+* **Where comments pay off most:** concurrency (why the epoch is read *before* copying the model), design choices that look wrong out of context (no activation on the last layer, because `CrossEntropyLoss` applies softmax itself), and lifecycles (the `running ⇄ paused → done / stopped / error` diagram on `TrainingSession`).
+
+---
+
+### 6.3 Documentation Drift: Check Every Claim Against the Code
+* **Phase:** 8
+* **Symptom:** the root README still described an earlier version of the project: the title "How AI Works", "Transformers" for NLP, `utils/` for "image processing", and a "Stateless API" principle. The app now keeps training state in `AppState`, so that last claim was false. `main.py`'s API title and `CLAUDE.md` ("only `/health` exists today") were stale in the same way, and `frontend/README.md` was still the Vite template.
+* **Root Cause:** docs aren't executed or tested, so nothing fails when they go out of date.
+* **The Pattern:** treat each sentence in a README as a claim and verify it:
+  * Folder tree → `ls` the real directories.
+  * Prerequisites → read them from the tools (`vite`'s `engines.node` is `^20.19.0 || >=22.12.0`, so "Node 18+" was wrong).
+  * "Works without the backend" → `grep` which pages import `api/client` (only Sections 3–5 do).
+  * Dependencies → `grep` for imports. Six packages in `requirements.txt` (`transformers`, `torchvision`, …) are never imported, which makes setup much slower than it needs to be.
+* **Rule:** update the docs in the same change as the code. The tests in 5.x catch code drift; for docs, only review catches it.
+
+---
+
+### 6.4 Screenshots as Code
+* **Phase:** 8
+* **The Problem:** hand-taken screenshots go stale after the first UI change, and nobody remembers which state they showed (which dataset? which network?).
+* **The Pattern:** `frontend/scripts/capture-screenshots.cjs` drives a real browser with Playwright through a fixed script (reset → train Circle vs Square → open Section 5 → click the centre), so `npm run screenshots` reproduces every image exactly.
+* **Details that matter:**
+  * Force light mode with `addInitScript` so the images look consistent.
+  * Scroll each target to a fixed offset below the sticky header instead of using `scrollIntoViewIfNeeded()`, which only scrolls "enough", so the target may land at the very bottom edge of the frame.
+  * Reuse the accessible names the E2E tests use (`svg[aria-label^="Decision boundary"]`). Good ARIA labels make a page easy to automate as well as accessible.
 
 ---
 

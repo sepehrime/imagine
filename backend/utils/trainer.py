@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import logging
 import math
+import os
 import threading
 import time
 import uuid
@@ -34,13 +35,17 @@ MODEL_SEED = 0
 
 # Real training on 300 points takes milliseconds per epoch — far too fast to
 # watch. Each epoch is padded so a full run takes a few seconds.
-TARGET_RUN_SECONDS = 8.0
+# Configurable via env (12-factor): tests and CI set TRAINING_TARGET_SECONDS=0
+# to train at full speed; 0 disables pacing entirely.
+TARGET_RUN_SECONDS = float(os.getenv("TRAINING_TARGET_SECONDS", "8"))
 MIN_EPOCH_SECONDS = 0.015
 MAX_EPOCH_SECONDS = 0.06
 
 
 @dataclass(frozen=True)
 class TrainConfig:
+    """The learner's choices for one run. Frozen, so a run's settings can't change mid-way."""
+
     dataset: str
     learning_rate: float
     epochs: int
@@ -48,6 +53,13 @@ class TrainConfig:
 
 
 class TrainingSession:
+    """
+    One training run: a fresh network, its dataset, and the metrics so far.
+
+    Lifecycle:  running ⇄ paused → done
+                    └──────┴──→ stopped (replaced or reset) / error (diverged)
+    """
+
     def __init__(
         self,
         config: TrainConfig,
@@ -79,6 +91,7 @@ class TrainingSession:
 
     # ------------------------------------------------------------------ control
     def start(self) -> None:
+        """Begins training in a background thread and returns immediately."""
         self._thread.start()
 
     def run_blocking(self) -> None:
@@ -86,6 +99,7 @@ class TrainingSession:
         self._run()
 
     def pause(self) -> bool:
+        """Pauses after the current epoch. Returns False if the run isn't running."""
         with self._lock:
             if self.status != "running":
                 return False
@@ -95,6 +109,7 @@ class TrainingSession:
         return True
 
     def resume(self) -> bool:
+        """Continues a paused run. Returns False if the run isn't paused."""
         with self._lock:
             if self.status != "paused":
                 return False
@@ -104,6 +119,7 @@ class TrainingSession:
         return True
 
     def stop(self) -> None:
+        """Ends the run for good and waits (briefly) for the thread to exit."""
         with self._lock:
             if self.status in ("running", "paused"):
                 self.status = "stopped"
@@ -147,19 +163,23 @@ class TrainingSession:
 
     # ---------------------------------------------------------------- training
     def _weights_snapshot(self) -> list[list[list[float]]]:
+        """Weights as plain lists, ready to send as JSON for the weights diagram."""
         return [layer.weight.detach().tolist() for layer in self.model.linears]
 
     def _state_snapshot(self) -> dict[str, torch.Tensor]:
+        """Detached copies of every parameter, so later training steps can't change them."""
         return {k: v.detach().clone() for k, v in self.model.state_dict().items()}
 
     @torch.no_grad()
     def _evaluate(self, X: torch.Tensor, y: torch.Tensor, loss_fn: nn.Module) -> tuple[float, float]:
+        """Loss and accuracy on the whole dataset (no gradients, weights unchanged)."""
         logits = self.model(X)
         loss = loss_fn(logits, y).item()
         accuracy = (logits.argmax(dim=1) == y).float().mean().item()
         return loss, accuracy
 
     def _record(self, epoch: int, loss: float, accuracy: float) -> None:
+        """Publishes one finished epoch to readers, all under the lock in one step."""
         with self._lock:
             self.epoch = epoch
             self.history.append({"epoch": epoch, "loss": loss, "accuracy": accuracy})
@@ -167,6 +187,14 @@ class TrainingSession:
             self._state = self._state_snapshot()
 
     def _run(self) -> None:
+        """
+        The training loop (runs in the background thread).
+
+        Each epoch: shuffle the data, then for every mini-batch of 16 points
+        do one step of gradient descent:
+            forward pass → loss → backward pass (gradients) → update weights.
+        After each epoch, measure loss/accuracy on all points and record them.
+        """
         torch.set_num_threads(1)  # tiny model; avoid fighting other threads for cores
         cfg = self.config
         logger.info(
@@ -176,12 +204,17 @@ class TrainingSession:
         try:
             X = torch.from_numpy(self.dataset.X)
             y = torch.from_numpy(self.dataset.y)
+            # Cross-entropy: the standard loss for "pick one of N classes". It takes
+            # raw logits and applies softmax itself.
             loss_fn = nn.CrossEntropyLoss()
+            # Plain SGD (no momentum) so the learning-rate slider has a clear,
+            # visible effect: too low crawls, too high diverges.
             optimizer = torch.optim.SGD(self.model.parameters(), lr=cfg.learning_rate)
-            shuffle = torch.Generator().manual_seed(MODEL_SEED)
+            shuffle = torch.Generator().manual_seed(MODEL_SEED)  # same batch order every run
+            # Seconds per epoch: spread the run over ~TARGET_RUN_SECONDS, within limits
             pace = (
                 min(MAX_EPOCH_SECONDS, max(MIN_EPOCH_SECONDS, TARGET_RUN_SECONDS / cfg.epochs))
-                if self._paced
+                if self._paced and TARGET_RUN_SECONDS > 0
                 else 0.0
             )
 
@@ -197,9 +230,9 @@ class TrainingSession:
                 order = torch.randperm(len(X), generator=shuffle)
                 for i in range(0, len(X), BATCH_SIZE):
                     batch = order[i : i + BATCH_SIZE]
-                    optimizer.zero_grad()
-                    loss_fn(self.model(X[batch]), y[batch]).backward()
-                    optimizer.step()
+                    optimizer.zero_grad()  # gradients add up in PyTorch, so clear last step's
+                    loss_fn(self.model(X[batch]), y[batch]).backward()  # forward + backprop
+                    optimizer.step()  # w ← w − learning_rate · gradient
 
                 loss, accuracy = self._evaluate(X, y, loss_fn)
                 if not math.isfinite(loss):
@@ -219,7 +252,7 @@ class TrainingSession:
             logger.info(
                 "train %s: done loss=%.4f accuracy=%.3f", self.id, final["loss"], final["accuracy"]
             )
-            if self._on_complete:
+            if self._on_complete:  # AppState makes this the model Section 5 shows
                 self._on_complete(self)
         except FloatingPointError as exc:  # expected with a too-high learning rate
             logger.warning("train %s: %s", self.id, exc)

@@ -17,6 +17,7 @@ GRID_RESOLUTION = 100
 
 
 def grid_points(resolution: int = GRID_RESOLUTION) -> np.ndarray:
+    """Centre of every grid cell, shape (resolution², 2), in the order described above."""
     centers = -1 + (np.arange(resolution) + 0.5) * 2 / resolution
     xs, ys = np.meshgrid(centers, centers[::-1])  # row 0 = top (y = +1)
     return np.stack([xs.ravel(), ys.ravel()], axis=1).astype(np.float32)

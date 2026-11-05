@@ -373,50 +373,50 @@ Python (FastAPI) backend.
 ## 🧪 Phase 7: Testing & Quality
 
 ### 7.1 Frontend
-- [ ] All routes load without errors
-- [ ] Dark/light mode persists on page refresh
-- [ ] Progress tracking saves correctly across sessions
-- [ ] Section 1: sliders update neuron output in real-time
-- [ ] Section 2: network diagram re-renders live on slider change
-- [ ] Section 3: forward pass animation plays correctly
-- [ ] Section 4: loss curve animates during training, pause/reset work
-- [ ] Section 5: decision boundary heatmap renders, click prediction works
-- [ ] All API calls handle loading and error states gracefully
-- [ ] Responsive layout works on mobile (375px) and tablet (768px)
+- [x] All routes load without errors
+- [x] Dark/light mode persists on page refresh
+- [x] Progress tracking saves correctly across sessions
+- [x] Section 1: sliders update neuron output in real-time
+- [x] Section 2: network diagram re-renders live on slider change
+- [x] Section 3: forward pass animation plays correctly
+- [x] Section 4: loss curve animates during training, pause/reset work
+- [x] Section 5: decision boundary heatmap renders, click prediction works
+- [x] All API calls handle loading and error states gracefully
+- [x] Responsive layout works on mobile (375px) and tablet (768px)
 
 ### 7.2 Backend
-- [ ] `/health` returns 200
-- [ ] Neuron compute returns correct output for known inputs
-- [ ] Forward pass returns activations for all nodes
-- [ ] Training runs to completion and saves the model to state
-- [ ] Boundary grid endpoint returns a full 100×100 prediction grid
-- [ ] Point prediction returns a class and confidence
-- [ ] All endpoints return 422 for invalid or missing input
-- [ ] CORS: requests from `localhost:5173` succeed
+- [x] `/health` returns 200
+- [x] Neuron compute returns correct output for known inputs
+- [x] Forward pass returns activations for all nodes
+- [x] Training runs to completion and saves the model to state
+- [x] Boundary grid endpoint returns a full 100×100 prediction grid
+- [x] Point prediction returns a class and confidence
+- [x] All endpoints return 422 for invalid or missing input
+- [x] CORS: requests from `localhost:5173` succeed
 
 ### 7.3 End-to-End
-- [ ] Full journey: Home → Neuron → Build → Forward Pass → Train → Boundary
-- [ ] Carry architecture from Section 2 into Section 3 (or verify default is used)
-- [ ] Carry trained model from Section 4 into Section 5
-- [ ] All "Mark as Complete" buttons update progress correctly
-- [ ] No console errors in the browser DevTools
-- [ ] No unhandled exceptions in the backend terminal
+- [x] Full journey: Home → Neuron → Build → Forward Pass → Train → Boundary
+- [x] Carry architecture from Section 2 into Section 3 (or verify default is used)
+- [x] Carry trained model from Section 4 into Section 5
+- [x] All "Mark as Complete" buttons update progress correctly
+- [x] No console errors in the browser DevTools
+- [x] No unhandled exceptions in the backend terminal
 
 ---
 
 ## 📝 Phase 8: Documentation
 
-- [ ] Write root `README.md` with:
-  - [ ] Project description and screenshots
-  - [ ] Prerequisites (Node.js, Python 3.10+)
-  - [ ] Step-by-step local setup (frontend + backend)
-  - [ ] How to start both servers
-  - [ ] Overview of all 5 sections
-  - [ ] Folder structure explanation
-- [ ] Inline comments on all backend route handlers and training logic
-- [ ] JSDoc-style comments on complex React components (especially D3 network diagram)
-- [ ] FastAPI auto-docs available at `localhost:8000/docs`
-
+- [x] Write root `README.md` with:
+  - [x] Project description and screenshots
+  - [x] Prerequisites (Node.js, Python 3.10+)
+  - [x] Step-by-step local setup (frontend + backend)
+  - [x] How to start both servers
+  - [x] Overview of all 5 sections
+  - [x] Folder structure explanation
+- [x] Inline comments on all backend route handlers and training logic
+- [x] JSDoc-style comments on complex React components (especially D3 network diagram)
+- [x] FastAPI auto-docs available at `localhost:8000/docs`
+ 
 ---
 
 ## 🚀 Phase 9: Polish & Nice-to-Haves

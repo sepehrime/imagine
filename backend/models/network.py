@@ -3,7 +3,8 @@ Configurable fully connected PyTorch network.
 
 Used by:
   - Section 3 (Forward Pass): run one input through and trace every layer.
-  - Section 4 (Train): trained on a 2D dataset (planned).
+  - Section 4 (Train): trained on a 2D dataset (utils/trainer.py).
+  - Section 5 (Decision Boundary): evaluated over a grid (utils/boundary.py).
 
 Design notes:
   - `forward()` returns raw scores ("logits"), which is what PyTorch's loss
@@ -59,11 +60,13 @@ class ConfigurableNetwork(nn.Module):
         return "sigmoid" if self.layer_sizes[-1] == 1 else "softmax"
 
     def output_activation(self, logits: torch.Tensor) -> torch.Tensor:
+        """Turns raw output scores into what the page displays (probabilities)."""
         if self.output_activation_name == "sigmoid":
             return torch.sigmoid(logits)
         return torch.softmax(logits, dim=-1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Raw output scores (logits): no activation on the last layer, as the loss expects."""
         last = len(self.linears) - 1
         for i, layer in enumerate(self.linears):
             x = layer(x)
