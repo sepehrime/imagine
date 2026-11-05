@@ -114,3 +114,9 @@ export async function trainDefaultModel() {
   const { data } = await api.post("/api/boundary/default");
   return data;
 }
+
+/** GET /api/boundary/status → { has_model, model } (always 200) */
+export async function getBoundaryStatus({ signal } = {}) {
+  const { data } = await api.get("/api/boundary/status", { signal });
+  return data;
+}

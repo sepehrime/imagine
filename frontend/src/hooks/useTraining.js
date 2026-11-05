@@ -17,7 +17,7 @@ const POLL_MS = 200;
  * history_length), so we keep only the part at or after `since`. This works
  * for both incremental polls (`?since=N`) and full snapshots (start/pause).
  */
-function newEntries(status, since) {
+export function newEntries(status, since) {
   const firstIndex = status.history_length - status.history.length;
   return status.history.slice(Math.max(0, since - firstIndex));
 }

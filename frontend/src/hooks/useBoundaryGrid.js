@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getBoundaryGrid, toApiError, isCancel } from "../api/client";
+import { getBoundaryGrid, getBoundaryStatus, toApiError, isCancel } from "../api/client";
 
 const LIVE_POLL_MS = 400;
 
@@ -14,8 +14,10 @@ const LIVE_POLL_MS = 400;
  * 1. One Loop, Self-Terminating: the setTimeout chain decides from each
  *    *response* (`model.status`) whether to fetch again, so it stops on its
  *    own when training ends, with no extra "is it done?" state to keep in sync.
- * 2. Typed Empty State: a 409 from the backend means "no model yet", which is
- *    a normal state with its own UI, not an error.
+ * 2. Ask Before You Fetch: "no model yet" is a normal state, so the hook
+ *    first checks GET /status (always 200) instead of requesting the grid and
+ *    catching a 409 — failed requests show up as red errors in DevTools.
+ *    A 409 is still handled, as a fallback for races (e.g. reset mid-request).
  * 3. Reload Key: `reload()` bumps a counter in the effect's deps to refetch,
  *    instead of calling setState from inside the effect.
  */
@@ -31,6 +33,13 @@ export function useBoundaryGrid(trainingId) {
 
     const tick = async () => {
       try {
+        if (!trainingId) {
+          const status = await getBoundaryStatus({ signal: controller.signal });
+          if (!status.has_model) {
+            setNoModel(true);
+            return;
+          }
+        }
         const data = await getBoundaryGrid(trainingId, { signal: controller.signal });
         setGrid(data);
         setNoModel(false);
