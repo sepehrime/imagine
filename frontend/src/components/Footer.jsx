@@ -2,6 +2,21 @@ import { Link } from "react-router-dom";
 import { Network, ShieldCheck, BookOpen, Info, Sparkles } from "lucide-react";
 import { SECTIONS_NAV } from "./Header";
 
+/**
+ * Footer Component
+ *
+ * Site-wide footer rendered once by `MainLayout`: mission statement, links to
+ * all five sections, and reference links (Glossary, About, API docs).
+ *
+ * SWE Design Patterns applied:
+ * 1. Single Source of Truth: the section links are generated from
+ *    `SECTIONS_NAV`, so renaming or reordering a section updates the footer,
+ *    header and prev/next buttons together (see lessons 3.5).
+ * 2. Layout Composition: lives in `MainLayout`, so no page has to remember to
+ *    render it.
+ * 3. Safe External Links: the Swagger link opens in a new tab with
+ *    `rel="noopener noreferrer"` (see lessons 3.28).
+ */
 export default function Footer() {
   return (
     <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 transition-colors duration-200 mt-auto">

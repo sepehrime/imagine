@@ -1,16 +1,14 @@
-# React + Vite
+# Inside the Network: Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React 19 + Vite + Tailwind CSS app for the five interactive sections.
 
-Currently, two official plugins are available:
+See the [root README](../README.md) for setup, the project overview and the folder structure.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+| Command | What it does |
+| :--- | :--- |
+| `npm run dev` | Dev server on http://localhost:5173 (proxies `/api` to the backend on :8000) |
+| `npm run build` | Production build into `dist/` |
+| `npm run lint` | oxlint |
+| `npm test` | Unit tests (Vitest, `src/**/*.test.js`) |
+| `npm run test:e2e` | End-to-end tests (Playwright, `e2e/`); starts its own servers |
+| `npm run screenshots` | Re-capture the README screenshots (needs both dev servers running) |
