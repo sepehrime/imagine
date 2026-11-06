@@ -273,7 +273,7 @@ export default function Boundary() {
                 ) : probe.error ? (
                   <p className="text-xs text-rose-600 dark:text-rose-400">{probe.error.message}</p>
                 ) : !probe.result ? (
-                  <LoadingSpinner inline size="sm" label="Asking the network…" />
+                  <LoadingSpinner label="Asking the network…" />
                 ) : (
                   <p className="text-sm text-slate-600 dark:text-slate-400">
                     At ({probe.x.toFixed(2)}, {probe.y.toFixed(2)}) it says{" "}

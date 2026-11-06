@@ -348,7 +348,7 @@ export default function ForwardPass() {
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
               >
                 {status === "loading" ? (
-                  <LoadingSpinner inline size="sm" label="" className="[&_svg]:text-white" />
+                  <LoadingSpinner label="" className="[&_svg]:text-white" />
                 ) : (
                   <Play className="w-4 h-4" />
                 )}

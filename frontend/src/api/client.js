@@ -12,7 +12,7 @@ import axios from "axios";
  * 3. Cancellation: every call accepts an AbortSignal, so a component can
  *    cancel a request it no longer needs (newer click, page unmount).
  */
-export const api = axios.create({
+const api = axios.create({
   baseURL: "/",
   timeout: 15000,
   headers: { "Content-Type": "application/json" },

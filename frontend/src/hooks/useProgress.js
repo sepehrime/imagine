@@ -77,13 +77,6 @@ export function useProgressStore() {
     [completedSections]
   );
 
-  const markCompleted = useCallback((sectionId) => {
-    setCompletedSections((prev) => {
-      if (prev.includes(sectionId)) return prev;
-      return [...prev, sectionId].sort((a, b) => a - b);
-    });
-  }, []);
-
   const toggleCompleted = useCallback((sectionId) => {
     setCompletedSections((prev) => {
       if (prev.includes(sectionId)) {
@@ -113,7 +106,6 @@ export function useProgressStore() {
     percentage,
     isAllComplete,
     isCompleted,
-    markCompleted,
     toggleCompleted,
     resetProgress,
   };
