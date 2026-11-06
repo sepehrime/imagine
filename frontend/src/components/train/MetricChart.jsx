@@ -38,7 +38,7 @@ export default function MetricChart({
           </span>
         )}
       </figcaption>
-      <div className="h-44 text-slate-400 dark:text-slate-500">
+      <div className="h-44 text-slate-500 dark:text-slate-400">
         {data.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs text-slate-500 dark:text-slate-400">
             {emptyText}

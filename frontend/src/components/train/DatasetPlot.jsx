@@ -1,5 +1,5 @@
 import { CLASS_STYLES } from "../../utils/classStyles";
-import { useId } from "react";
+import { useId, useState } from "react";
 import { PLOT_PAD, PLOT_SIZE, fromPx, fromPy, toPx, toPy } from "../../utils/plotScale";
 
 /**
@@ -17,7 +17,19 @@ import { PLOT_PAD, PLOT_SIZE, fromPx, fromPy, toPx, toPy } from "../../utils/plo
  * 4. Optional Capabilities: `predictions` (draw misclassified points as ✕),
  *    `overlay` (drawn above points) and `onPlotClick` (click → data coords)
  *    are all opt-in, so Section 4's simple previews stay unchanged.
+ * 5. Keyboard Parity: when `onPlotClick` is set the plot is focusable; arrow
+ *    keys move a crosshair (Shift = bigger steps) and Enter/Space "clicks" at
+ *    it. Moving doesn't fire requests — only Enter does, like a mouse click.
  */
+
+const KEY_STEP = 0.1;
+const KEY_MOVES = {
+  ArrowLeft: [-1, 0],
+  ArrowRight: [1, 0],
+  ArrowUp: [0, 1],
+  ArrowDown: [0, -1],
+};
+const clamp1 = (v) => Math.max(-1, Math.min(1, Math.round(v * 100) / 100));
 
 const SIZE = PLOT_SIZE;
 const PAD = PLOT_PAD;
@@ -63,6 +75,24 @@ export default function DatasetPlot({
   label,
 }) {
   const clipId = useId();
+  const [cursor, setCursor] = useState({ x: 0, y: 0 }); // keyboard crosshair, data coords
+  const [keyboardActive, setKeyboardActive] = useState(false);
+
+  const handleKeyDown = onPlotClick
+    ? (e) => {
+        const move = KEY_MOVES[e.key];
+        if (move) {
+          e.preventDefault(); // don't scroll the page
+          const step = e.shiftKey ? KEY_STEP * 5 : KEY_STEP;
+          setCursor((c) => ({ x: clamp1(c.x + move[0] * step), y: clamp1(c.y + move[1] * step) }));
+          setKeyboardActive(true);
+        } else if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          setKeyboardActive(true);
+          onPlotClick(cursor.x, cursor.y);
+        }
+      }
+    : undefined;
 
   // Screen click → data coordinates in [-1, 1]
   const handleClick = onPlotClick
@@ -79,10 +109,21 @@ export default function DatasetPlot({
   return (
     <svg
       viewBox={`0 0 ${SIZE} ${SIZE}`}
-      className={`w-full h-auto ${onPlotClick ? "cursor-crosshair" : ""} ${className}`}
-      role="img"
-      aria-label={label ?? `${dataset.label}: ${dataset.points.length} points in ${dataset.class_names.length} classes.`}
+      className={`w-full h-auto ${
+        onPlotClick
+          ? "cursor-crosshair rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+          : ""
+      } ${className}`}
+      role={onPlotClick ? "application" : "img"}
+      aria-roledescription={onPlotClick ? "interactive plot" : undefined}
+      aria-label={
+        (label ?? `${dataset.label}: ${dataset.points.length} points in ${dataset.class_names.length} classes.`) +
+        (onPlotClick ? ` Use arrow keys to move the crosshair (now at ${cursor.x.toFixed(1)}, ${cursor.y.toFixed(1)}), Enter to ask.` : "")
+      }
+      tabIndex={onPlotClick ? 0 : undefined}
       onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      onBlur={() => setKeyboardActive(false)}
     >
       <defs>
         <clipPath id={clipId}>
@@ -113,6 +154,12 @@ export default function DatasetPlot({
         );
       })}
       {overlay}
+      {onPlotClick && keyboardActive && (
+        <g className="pointer-events-none stroke-violet-600 dark:stroke-violet-300" strokeWidth={1.2} aria-hidden="true">
+          <line x1={toPx(cursor.x) - 7} x2={toPx(cursor.x) + 7} y1={toPy(cursor.y)} y2={toPy(cursor.y)} />
+          <line x1={toPx(cursor.x)} x2={toPx(cursor.x)} y1={toPy(cursor.y) - 7} y2={toPy(cursor.y) + 7} />
+        </g>
+      )}
     </svg>
   );
 }

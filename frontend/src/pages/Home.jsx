@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles, ArrowRight, RotateCcw, Trophy, GraduationCap } from "lucide-react";
 import { SECTIONS_NAV } from "../components/Header";
@@ -16,6 +17,8 @@ import { suggestNextSection } from "../utils/suggestNextSection";
  * 2. Business Logic Isolation: "which section is next" lives in a pure helper
  *    (`suggestNextSection`), not inline in JSX.
  * 3. Data-Driven Rendering: the grid maps over `SECTIONS_NAV` (SSOT).
+ * 4. Two-Step Confirmation: "Reset Progress" is destructive and can't be undone,
+ *    so the first click only asks; the second click actually resets.
  */
 export default function Home() {
   const {
@@ -27,7 +30,13 @@ export default function Home() {
     resetProgress,
   } = useProgress();
 
+  const [confirmingReset, setConfirmingReset] = useState(false);
   const suggestedId = suggestNextSection(SECTIONS_NAV, completedSections);
+
+  function handleConfirmReset() {
+    resetProgress();
+    setConfirmingReset(false);
+  }
 
   return (
     <div className="space-y-12">
@@ -81,16 +90,36 @@ export default function Home() {
             </div>
           </div>
 
-          {completedCount > 0 && (
+          {completedCount > 0 && !confirmingReset && (
             <button
               type="button"
-              onClick={resetProgress}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
-              title="Reset progress to 0%"
+              onClick={() => setConfirmingReset(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-500 hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
               Reset Progress
             </button>
+          )}
+
+          {completedCount > 0 && confirmingReset && (
+            <div role="group" aria-label="Confirm reset" className="flex flex-wrap items-center justify-end gap-2 text-xs">
+              <span className="font-medium text-slate-600 dark:text-slate-300">Clear all {completedCount} completed?</span>
+              <button
+                type="button"
+                onClick={handleConfirmReset}
+                className="px-3 py-1.5 rounded-xl font-semibold bg-rose-600 hover:bg-rose-700 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+              >
+                Yes, reset
+              </button>
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setConfirmingReset(false)}
+                className="px-3 py-1.5 rounded-xl font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                Cancel
+              </button>
+            </div>
           )}
         </div>
 

@@ -1,4 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+
+// Filled by <ProgressProvider> (src/context/ProgressContext.jsx)
+export const ProgressContext = createContext(null);
 
 const STORAGE_KEY = "inside_network_progress";
 const TOTAL_SECTIONS = 5;
@@ -10,7 +13,7 @@ function sanitize(value) {
 }
 
 /**
- * Custom Hook: useProgress
+ * Custom Hook: useProgressStore (the state itself — mounted ONCE by <ProgressProvider>)
  *
  * SWE Design Patterns applied:
  * 1. Storage Abstraction Layer: Encapsulates all localStorage read/write logic behind
@@ -21,8 +24,11 @@ function sanitize(value) {
  *    updates in one browser tab reflect immediately in other open tabs.
  * 4. Derived State Computation: Computes `completedCount`, `isAllComplete`, and `percentage`
  *    reactively from the core list of completed section IDs.
+ * 5. Single Instance via Context: only <ProgressProvider> calls this. Before Phase 9 every
+ *    page called it directly and got its OWN copy of the state, so a component in the
+ *    layout (the confetti) never saw a page mark a section complete.
  */
-export function useProgress() {
+export function useProgressStore() {
   const [completedSections, setCompletedSections] = useState(() => {
     if (typeof window === "undefined" || !window.localStorage) {
       return [];
@@ -111,4 +117,19 @@ export function useProgress() {
     toggleCompleted,
     resetProgress,
   };
+}
+
+/**
+ * Custom Hook: useProgress — what components call to read/update progress.
+ *
+ * SWE Design Pattern: Context Consumer with Fail-Fast Guard. Throws if used
+ * outside <ProgressProvider>, so a missing provider is a loud error instead of
+ * silently-unshared state.
+ */
+export function useProgress() {
+  const ctx = useContext(ProgressContext);
+  if (!ctx) {
+    throw new Error("useProgress must be used within a ProgressProvider");
+  }
+  return ctx;
 }

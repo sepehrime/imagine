@@ -59,7 +59,7 @@ export default function SectionCard({ section, isCompleted = false, isSuggested 
 
         {/* Title & Description */}
         <div>
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             Interactive Section {section.id}
           </span>
           <h3 className="font-extrabold text-slate-900 dark:text-white text-lg group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mt-0.5">

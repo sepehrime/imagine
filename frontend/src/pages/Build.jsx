@@ -4,6 +4,7 @@ import KeyTakeaway from "../components/KeyTakeaway";
 import GlossaryTerm from "../components/GlossaryTerm";
 import Tooltip from "../components/Tooltip";
 import SliderControl from "../components/SliderControl";
+import ExplainPanel from "../components/ExplainPanel";
 import NetworkDiagram from "../components/build/NetworkDiagram";
 import { useProgress } from "../hooks/useProgress";
 import { useArchitecture } from "../hooks/useArchitecture";
@@ -213,6 +214,9 @@ export default function Build() {
           {/* Diagram */}
           <div className="lg:col-span-3 lg:order-1">
             <NetworkDiagram layers={layers} activationLabel={ACTIVATIONS[config.activation].label} />
+            <ExplainPanel className="mt-4">
+              <BuildWalkthrough layers={layers} stats={stats} activationLabel={ACTIVATIONS[config.activation].label} />
+            </ExplainPanel>
           </div>
         </div>
 
@@ -296,5 +300,29 @@ function Stat({ label, value, note }) {
       <dd className="text-2xl font-extrabold tabular-nums text-slate-900 dark:text-white">{value}</dd>
       <dd className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">{note}</dd>
     </div>
+  );
+}
+
+// "Explain this step" for Section 2: how the diagram and its counts relate
+function BuildWalkthrough({ layers, stats, activationLabel }) {
+  const pairs = layers.slice(1).map((n, i) => `${layers[i]} × ${n}`);
+  return (
+    <>
+      <p>
+        <strong>Reading the diagram:</strong> each column is a layer, each circle a neuron, and each line a weight. Data
+        flows left to right. Input circles only hold numbers; every other circle runs the Section 1 calculation with{" "}
+        {activationLabel}.
+      </p>
+      <p>
+        <strong>Counting the weights:</strong> every neuron connects to every neuron in the next layer, so each pair of
+        neighbouring layers adds <em>left size × right size</em> lines: {pairs.join(" + ")} ={" "}
+        <strong>{stats.weights}</strong>. Add one bias per non-input neuron ({stats.biases}) to get{" "}
+        <strong>{stats.parameters}</strong> numbers that training will tune.
+      </p>
+      <p>
+        <strong>Try it:</strong> add one neuron to a middle layer and watch the weight count jump by the size of
+        <em> both</em> its neighbours.
+      </p>
+    </>
   );
 }

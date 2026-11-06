@@ -5,6 +5,8 @@ import KeyTakeaway from "../components/KeyTakeaway";
 import GlossaryTerm from "../components/GlossaryTerm";
 import SliderControl from "../components/SliderControl";
 import LoadingSpinner from "../components/LoadingSpinner";
+import ExplainPanel from "../components/ExplainPanel";
+import { Skeleton, SkeletonGroup } from "../components/Skeleton";
 import ErrorMessage from "../components/ErrorMessage";
 import DatasetPlot, { ClassLegend, Marker } from "../components/train/DatasetPlot";
 import BoundaryLayer from "../components/boundary/BoundaryLayer";
@@ -186,9 +188,17 @@ export default function Boundary() {
         ) : noModel ? (
           <NoModel onUseDefault={loadDefaultModel} state={defaultState} />
         ) : !grid ? (
-          <div className="py-16 flex justify-center">
-            <LoadingSpinner label="Loading the trained model…" />
-          </div>
+          <SkeletonGroup label="Loading the trained model…" className="grid lg:grid-cols-5 gap-8">
+            <div className="lg:col-span-3 space-y-3">
+              <Skeleton className="aspect-square w-full" />
+              <Skeleton className="h-4 w-2/3" />
+            </div>
+            <div className="lg:col-span-2 space-y-5">
+              <Skeleton className="h-28 w-full rounded-2xl" />
+              <Skeleton className="h-40 w-full rounded-2xl" />
+              <Skeleton className="h-10 w-1/2" />
+            </div>
+          </SkeletonGroup>
         ) : (
           <div className="grid lg:grid-cols-5 gap-8">
             {/* Plot */}
@@ -213,6 +223,9 @@ export default function Boundary() {
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">Stronger colour = more confident</span>
               </div>
+              <ExplainPanel>
+                <BoundaryWalkthrough grid={grid} />
+              </ExplainPanel>
             </div>
 
             {/* Side panel */}
@@ -252,6 +265,7 @@ export default function Boundary() {
                   <MousePointerClick className="w-4 h-4 text-violet-600 dark:text-violet-400" />
                   Click anywhere on the map
                 </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">Keyboard: Tab to the map, arrow keys to aim, Enter to ask.</p>
                 {!probe ? (
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     The network will tell you which class it thinks that spot belongs to, and how sure it is.
@@ -444,5 +458,31 @@ function NoModel({ onUseDefault, state }) {
       </div>
       {state.error && <ErrorMessage title={state.error.title} message={state.error.message} />}
     </div>
+  );
+}
+
+// "Explain this step" for Section 5: how the heatmap is produced
+function BoundaryWalkthrough({ grid }) {
+  const cells = grid.resolution * grid.resolution;
+  const wrong = grid.point_predictions.filter((p, i) => p !== grid.labels[i]).length;
+  return (
+    <>
+      <p>
+        <strong>How this picture is made:</strong> the square is split into a {grid.resolution} × {grid.resolution}{" "}
+        grid. The (x, y) position of each of those {cells.toLocaleString()} cells is fed through the trained network,
+        exactly like a forward pass. Each cell is coloured by the class the network picks, and the colour is stronger
+        when the network is more confident.
+      </p>
+      <p>
+        <strong>The boundary</strong> is where the colours meet: the line where the network changes its mind. Its
+        curves come from the hidden layer&apos;s activations; without them it could only draw a straight line.
+      </p>
+      <p>
+        <strong>The dots</strong> are the real training data. {wrong === 0
+          ? "Every dot sits in a region of its own colour, so the network gets all of them right."
+          : `${wrong} of ${grid.labels.length} sit on the wrong side (marked ✕). That's the ${(100 - grid.accuracy * 100).toFixed(1)}% it gets wrong.`}{" "}
+        Click anywhere to ask the network about a brand-new point.
+      </p>
+    </>
   );
 }

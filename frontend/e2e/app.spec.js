@@ -56,3 +56,20 @@ for (const width of [375, 768]) {
     }
   });
 }
+
+// Phase 9: confetti plays when the 5th section is marked complete, not on page load
+test("completing the last section shows the celebration", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.setItem("inside_network_progress", "[2,3,4,5]"));
+  await page.goto("/neuron");
+  const toast = page.getByRole("status").filter({ hasText: "All 5 sections complete" });
+  await expect(toast).toHaveCount(0);
+
+  await page.getByRole("button", { name: "Mark as Complete" }).click();
+  await expect(toast).toBeVisible();
+
+  // A returning learner who already finished is not celebrated again on load
+  await page.reload();
+  await expect(page.getByRole("button", { name: /Section Completed/ })).toBeVisible(); // still 5/5
+  await expect(toast).toHaveCount(0);
+});

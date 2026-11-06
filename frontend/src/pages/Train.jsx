@@ -4,7 +4,8 @@ import SectionNavFooter from "../components/SectionNavFooter";
 import KeyTakeaway from "../components/KeyTakeaway";
 import GlossaryTerm from "../components/GlossaryTerm";
 import SliderControl from "../components/SliderControl";
-import LoadingSpinner from "../components/LoadingSpinner";
+import ExplainPanel from "../components/ExplainPanel";
+import { Skeleton, SkeletonGroup } from "../components/Skeleton";
 import ErrorMessage from "../components/ErrorMessage";
 import DatasetPlot, { ClassLegend } from "../components/train/DatasetPlot";
 import MetricChart from "../components/train/MetricChart";
@@ -201,9 +202,16 @@ export default function Train() {
             onRetry={retryDatasets}
           />
         ) : !datasets ? (
-          <div className="py-10 flex justify-center">
-            <LoadingSpinner label="Loading datasets…" />
-          </div>
+          <SkeletonGroup label="Loading datasets…" className="grid sm:grid-cols-3 gap-4">
+            {DATASETS.map(({ name }) => (
+              <div key={name} className="rounded-2xl p-3 border-2 border-slate-200 dark:border-slate-800 space-y-3">
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-3 w-3/4" />
+              </div>
+            ))}
+          </SkeletonGroup>
         ) : (
           <div role="radiogroup" aria-label="Dataset" className="grid sm:grid-cols-3 gap-4">
             {DATASETS.map(({ name, blurb }) => {
@@ -335,7 +343,7 @@ export default function Train() {
             </span>
             <p className="font-mono font-extrabold tabular-nums text-slate-900 dark:text-white leading-none">
               <span className="text-4xl">{session?.epoch ?? 0}</span>
-              <span className="text-lg text-slate-400"> / {session?.total_epochs ?? epochs}</span>
+              <span className="text-lg text-slate-500"> / {session?.total_epochs ?? epochs}</span>
             </p>
           </div>
         </div>
@@ -379,6 +387,10 @@ export default function Train() {
             stroke="#1baf7a"
           />
         </div>
+
+        <ExplainPanel>
+          <TrainWalkthrough history={history} status={status} learningRate={session?.learning_rate ?? learningRate} />
+        </ExplainPanel>
 
         <div className="grid lg:grid-cols-5 gap-6 items-center">
           <div className="lg:col-span-3 rounded-2xl p-4 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
@@ -457,3 +469,36 @@ const primaryBtn =
   "flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
 const secondaryBtn =
   "inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+
+// "Explain this step" for Section 4: what one epoch does, read off the live curves
+function TrainWalkthrough({ history, status, learningRate }) {
+  const first = history[0];
+  const latest = history.at(-1);
+  return (
+    <>
+      <p>
+        <strong>One epoch</strong> = the network sees every training point once. For each batch it (1) runs a forward
+        pass, (2) measures the <em>loss</em>, how wrong its predictions were, (3) uses backpropagation to work out which
+        way each weight should move to lower the loss, and (4) moves every weight a small step that way, scaled by
+        the learning rate ({learningRate}).
+      </p>
+      {!latest ? (
+        <p>Press <strong>Start Training</strong> and both charts will fill in, one point per epoch.</p>
+      ) : (
+        <p>
+          <strong>So far:</strong> loss went from {first.loss.toFixed(3)} at epoch {first.epoch} to{" "}
+          {latest.loss.toFixed(3)} at epoch {latest.epoch}
+          {latest.loss < first.loss ? ", so the weight nudges are working" : ", so it hasn't improved yet"}. Accuracy is{" "}
+          {Math.round(latest.accuracy * 100)}%.{" "}
+          {status === "done"
+            ? "A curve that flattens out means the network has learned about as much as this setup allows."
+            : "Early on the loss usually drops fast, then flattens as the easy gains run out."}
+        </p>
+      )}
+      <p>
+        <strong>Troubleshooting:</strong> a loss that jumps around or rises means the learning rate is too big; one
+        that barely moves means it&apos;s too small (or the network is too narrow for the pattern).
+      </p>
+    </>
+  );
+}

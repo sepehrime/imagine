@@ -28,7 +28,7 @@ export default function SectionNavFooter({ currentSectionId }) {
         >
           <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:-translate-x-1 group-hover:text-blue-500 transition-transform" />
           <div className="text-left">
-            <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+            <span className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Previous Section
             </span>
             <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">

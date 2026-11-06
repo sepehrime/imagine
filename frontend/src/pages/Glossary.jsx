@@ -95,7 +95,7 @@ export default function Glossary() {
               type="button"
               onClick={() => setQuery("")}
               aria-label="Clear search"
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg text-slate-500 hover:text-slate-600 dark:hover:text-slate-200"
             >
               <X className="w-4 h-4" />
             </button>

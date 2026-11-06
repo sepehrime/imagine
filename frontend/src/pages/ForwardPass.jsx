@@ -5,13 +5,14 @@ import KeyTakeaway from "../components/KeyTakeaway";
 import GlossaryTerm from "../components/GlossaryTerm";
 import Tooltip from "../components/Tooltip";
 import SliderControl from "../components/SliderControl";
+import ExplainPanel from "../components/ExplainPanel";
 import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import ForwardPassDiagram from "../components/forward/ForwardPassDiagram";
 import { useProgress } from "../hooks/useProgress";
 import { useArchitecture } from "../hooks/useArchitecture";
 import { runForwardPass, toApiError, isCancel } from "../api/client";
-import { DEFAULT_ARCHITECTURE, toLayerSizes } from "../utils/architecture";
+import { DEFAULT_ARCHITECTURE, toLayerSizes, describeLayer } from "../utils/architecture";
 import { ACTIVATIONS } from "../utils/neuronMath";
 import {
   Play,
@@ -231,7 +232,7 @@ export default function ForwardPass() {
             <Dices className="w-3.5 h-3.5" />
             New random weights
             <Tooltip content="Weights are generated from a seed: the same seed always gives the same weights, so re-running with the same inputs gives the same answer.">
-              <span className="font-mono text-slate-400">#{seed}</span>
+              <span className="font-mono text-slate-500">#{seed}</span>
             </Tooltip>
           </button>
         </div>
@@ -248,6 +249,9 @@ export default function ForwardPass() {
               selectedNode={focus}
               onSelectNode={setSelectedNode}
             />
+            <ExplainPanel className="mt-4">
+              <ForwardWalkthrough layers={diagramLayers} result={result} revealed={revealed} />
+            </ExplainPanel>
           </div>
 
           {/* Controls */}
@@ -587,5 +591,56 @@ function OutputPanel({ result, isDone }) {
         })}
       </ul>
     </div>
+  );
+}
+
+// "Explain this step" for Section 3: what the layer that just lit up did
+function ForwardWalkthrough({ layers, result, revealed }) {
+  if (!result) {
+    return (
+      <p>
+        Nothing has run yet. Press <strong>Run Forward Pass</strong>: your inputs enter on the left, and each layer
+        lights up as it&apos;s computed. Hover or Tab to any circle to see its value.
+      </p>
+    );
+  }
+  const last = layers.length - 1;
+  const { name } = describeLayer(revealed, layers.length);
+  if (revealed === 0) {
+    return (
+      <p>
+        <strong>Step 0: {name}.</strong> Your {layers[0]} input values are placed on the left. No maths happens here;
+        they&apos;re just the starting numbers. Press <strong>Next Layer</strong> (or watch auto-play) to push them forward.
+      </p>
+    );
+  }
+  const trace = result.layers[revealed];
+  const prev = layers[revealed - 1];
+  const size = layers[revealed];
+  const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+  return (
+    <>
+      <p>
+        <strong>
+          Step {revealed} of {last}: {name}.
+        </strong>{" "}
+        {size === 1 ? "Its single neuron" : `Each of its ${size} neurons`} took all {prev} values from the previous layer, multiplied each by its
+        own weight (the lines; thicker = bigger), added a bias, and passed the total through {trace.activation_fn}.
+      </p>
+      <p>
+        That&apos;s {size} × {prev} = {plural(size * prev, "multiplication")} in this step alone, producing{" "}
+        {plural(size, "new number")}
+        {revealed === last ? "." : ", which become the input to the next layer."}
+      </p>
+      {revealed === last ? (
+        <p>
+          <strong>Done.</strong> {size === 1 ? "The output value is" : "The output values are"} the network&apos;s answer
+          {layers[last] > 1 ? `; the largest (neuron ${result.prediction + 1}, ringed in amber) is its prediction` : ""}.
+          These weights are random, so the answer is meaningless until Section 4 trains them.
+        </p>
+      ) : (
+        <p>Click a lit neuron to see its exact sum in the panel below.</p>
+      )}
+    </>
   );
 }

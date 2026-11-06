@@ -34,7 +34,7 @@ export default function SliderControl({
         <label htmlFor={id} className="text-xs font-semibold text-slate-700 dark:text-slate-300">
           {label}
           {hint && (
-            <span className="ml-1.5 font-normal text-slate-400 dark:text-slate-500">{hint}</span>
+            <span className="ml-1.5 font-normal text-slate-500 dark:text-slate-400">{hint}</span>
           )}
         </label>
         <span className="text-xs font-mono font-bold tabular-nums text-slate-900 dark:text-white">

@@ -1116,5 +1116,76 @@ In professional engineering, choosing a framework is documented as an **Architec
 
 ---
 
+## 7. Polish & Accessibility (Phase 9)
+
+### 7.1 A Custom Hook Shares Logic, Not State
+* **Phase:** 9
+* **Symptom:** the confetti (mounted in `MainLayout`) needed to know when a section page marked the 5th section complete, but it never would have: every `useProgress()` call created its *own* `useState`. The `storage` event that kept copies in sync only fires in **other** tabs, never the one that wrote.
+* **The Pattern:** split the hook in two. `useProgressStore()` holds the state and is called exactly once, by `<ProgressProvider>`; `useProgress()` just reads the context (and throws if there's no provider). Callers' imports didn't change, because the public name and return shape stayed the same.
+* **Rule:** if two components must agree on a value *in the same tab*, it needs one owner (context, a store, or a parent). Calling the same hook twice gives you two owners.
+
+---
+
+### 7.2 Edge Detection: React to the Change, Not the State
+* **Phase:** 9
+* **The Problem:** "show confetti when all sections are complete" read literally would fire on every page load for a learner who finished last week.
+* **The Pattern:** keep the previous value in a `useRef` (survives renders, doesn't cause them) and fire only on the `false → true` transition:
+  ```js
+  const wasComplete = prevRef.current;
+  prevRef.current = isAllComplete;
+  if (!wasComplete && isAllComplete) setCelebrating(true);
+  ```
+  Initialising the ref with the value *at mount* is what skips returning users. Read the old value before overwriting it, or the two are always equal.
+
+---
+
+### 7.3 Framer Motion's `transform` Overrides Tailwind's `translate`
+* **Phase:** 9 (debugging lesson)
+* **Symptom:** a toast centred with `left-1/2 -translate-x-1/2` and animated with `initial={{ y: 24 }}` would sit half off-centre.
+* **Root Cause:** Framer writes an inline `transform` for `y`, which replaces the whole CSS `transform` that Tailwind's translate classes build. Both properties fight over one CSS property.
+* **The Fix:** let Framer own every transform on that element: `style={{ x: "-50%" }}` instead of the Tailwind class.
+
+---
+
+### 7.4 Graceful Degradation: Say What Still Works
+* **Phase:** 9
+* **The Pattern:** a site-wide `BackendStatusBanner` checks `/health` and, when it fails, says *Sections 1–2 still work; 3–5 need the server* plus the exact command. It's verified, not assumed: only pages importing `api/client` need the backend (see 6.3).
+* **Adaptive polling:** `useBackendHealth` polls every 5 s only while **offline** (so the banner clears itself after you start uvicorn), and while online re-checks only on window `focus`, so a healthy app makes no background requests.
+* **ARIA detail:** the banner is a labelled `aria-live="polite"` region, deliberately *not* `role="alert"`. Per-request errors already use that role, and the E2E tests' strict `getByRole("alert")` would have found two (see 5.4).
+
+---
+
+### 7.5 Skeletons Mirror the Layout They Replace
+* **Phase:** 9
+* **The Pattern:** `<SkeletonGroup>` + `<Skeleton>` blocks shaped like the real UI (three square dataset cards; plot + side panel) instead of a centred spinner, so the page doesn't jump when data arrives.
+* **Accessibility:** the blocks are `aria-hidden`; the group is one `role="status"` with an `sr-only` label ("Loading datasets…"), so screen readers hear one message, and the existing E2E test for that text kept passing unchanged. `motion-safe:animate-pulse` skips the shimmer under reduced motion.
+
+---
+
+### 7.6 Keyboard Parity for SVG Interactions
+* **Phase:** 9
+* **Symptom:** clickable SVG `<g>` nodes and the click-to-probe boundary plot were mouse-only: not reachable by Tab, invisible to screen readers (an `<svg role="img">` hides all its children).
+* **The Pattern:**
+  * Clickable nodes get `tabIndex={0}`, `role="button"`, an `aria-label` with the value, `aria-pressed`, and an `onKeyDown` for Enter/Space. The tooltip opens on `focus` as well as `hover`. The parent `<svg>` became `role="group"` so its children are exposed.
+  * The plot gets a **keyboard cursor**: arrow keys move a crosshair (Shift = bigger steps) and only Enter sends the request. Moving doesn't call the API, so holding an arrow key can't flood the backend. `role="application"` tells screen readers to pass arrow keys through.
+  * Menus close on **Escape** and return focus to their toggle button (WAI-ARIA disclosure pattern).
+* **Rule:** every `onClick` on something that isn't a `<button>` or `<a>` needs a keyboard twin.
+
+---
+
+### 7.7 Contrast: Light *and* Dark Both Need Checking
+* **Phase:** 9
+* **The Numbers:** WCAG AA needs 4.5:1 for normal text. `text-slate-400` on white is ~2.6:1 (fail); `slate-500` is ~4.8:1 (pass). In dark mode `slate-500` on `slate-900` is ~3.7:1 (fail); `slate-400` is ~6.9:1 (pass). So the safe pairing for secondary text is `text-slate-500 dark:text-slate-400`, the reverse of the intuitive "lighter in dark mode, same shade" guess.
+* **Watch for inherited colour:** Recharts axis ticks used `fill: "currentColor"`, so the chart wrapper's `text-slate-400` failed contrast too. Decorative icons (`aria-hidden`) are exempt.
+
+---
+
+### 7.8 Enter-Only Page Transitions
+* **Phase:** 9
+* **Trade-off:** `AnimatePresence mode="wait"` exit animations keep the *old* page mounted while it fades out, which delays navigation, scrolls the old page when `ScrollToTop` fires, and briefly gives tests two pages to match. An enter-only fade (`<motion.div key={pathname}>`) gives most of the polish with none of that.
+* **One switch for reduced motion:** `<MotionConfig reducedMotion="user">` in `App.jsx` makes every Framer animation respect the OS setting, instead of checking it per component.
+
+---
+
 *(This document is continuously updated as new features, architectural patterns, and engineering lessons are introduced.)*
 

@@ -47,6 +47,17 @@ export function toApiError(err) {
   };
 }
 
+/** GET /health → true if the backend answered "ok" (never throws) */
+export async function checkHealth({ signal } = {}) {
+  try {
+    const { data } = await api.get("/health", { signal, timeout: 3000 });
+    return data?.status === "ok";
+  } catch (err) {
+    if (isCancel(err)) throw err; // let the caller ignore cancelled checks
+    return false;
+  }
+}
+
 /** POST /api/forward-pass/run */
 export async function runForwardPass({ architecture, inputs, activation, seed }, { signal } = {}) {
   const { data } = await api.post(

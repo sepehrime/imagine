@@ -421,15 +421,15 @@ Python (FastAPI) backend.
 
 ## 🚀 Phase 9: Polish & Nice-to-Haves
 
-- [ ] Smooth page transition animations between sections (Framer Motion)
-- [ ] Loading skeleton screens while API calls are pending
-- [ ] Keyboard support: Tab + Enter for all interactive controls
-- [ ] Confetti animation when all 5 sections are marked complete 🎉
-- [ ] Floating tooltip labels on the D3 network (hover node → show activation value)
-- [ ] Add "Explain this step" expandable panels next to each visualization
-- [ ] Accessibility: ARIA labels on all interactive elements, sufficient color contrast
-- [ ] Graceful degradation if backend is not running (show a "backend offline" warning)
-- [ ] Add a "Reset All Progress" button in settings
+- [x] Smooth page transition animations between sections (Framer Motion)
+- [x] Loading skeleton screens while API calls are pending
+- [x] Keyboard support: Tab + Enter for all interactive controls
+- [x] Confetti animation when all 5 sections are marked complete 🎉
+- [x] Floating tooltip labels on the D3 network (hover node → show activation value)
+- [x] Add "Explain this step" expandable panels next to each visualization
+- [x] Accessibility: ARIA labels on all interactive elements, sufficient color contrast
+- [x] Graceful degradation if backend is not running (show a "backend offline" warning)
+- [x] Add a "Reset All Progress" button in settings
 
 ---
 

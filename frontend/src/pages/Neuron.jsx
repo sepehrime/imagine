@@ -4,6 +4,7 @@ import KeyTakeaway from "../components/KeyTakeaway";
 import GlossaryTerm from "../components/GlossaryTerm";
 import Tooltip from "../components/Tooltip";
 import SliderControl from "../components/SliderControl";
+import ExplainPanel from "../components/ExplainPanel";
 import NeuronDiagram from "../components/neuron/NeuronDiagram";
 import ActivationChart from "../components/neuron/ActivationChart";
 import { useProgress } from "../hooks/useProgress";
@@ -366,6 +367,18 @@ export default function Neuron() {
               <ActivationChart activation={activation} weightedSum={weightedSum} output={output} />
             </div>
           </div>
+
+          <ExplainPanel>
+            <NeuronWalkthrough
+              inputs={inputs}
+              weights={weights}
+              bias={bias}
+              weightedSum={weightedSum}
+              output={output}
+              actLabel={act.label}
+              bringUmbrella={bringUmbrella}
+            />
+          </ExplainPanel>
         </div>
       </div>
 
@@ -380,5 +393,39 @@ export default function Neuron() {
       {/* Dynamic Previous / Next Pagination */}
       <SectionNavFooter currentSectionId={sectionId} />
     </div>
+  );
+}
+
+// "Explain this step" for Section 1: the neuron's calculation with the live numbers
+function NeuronWalkthrough({ inputs, weights, bias, weightedSum, output, actLabel, bringUmbrella }) {
+  const products = inputs.map((x, i) => weights[i] * x);
+  const biggest = products.reduce((best, p, i) => (Math.abs(p) > Math.abs(products[best]) ? i : best), 0);
+  return (
+    <ol className="list-decimal pl-5 space-y-2">
+      <li>
+        <strong>Weigh each input.</strong>{" "}
+        {products.map((p, i) => (
+          <span key={i}>
+            {INPUT_LABELS[i]}: {fmt(weights[i], 1)} × {fmt(inputs[i])} = <span className="font-mono">{fmt(p)}</span>
+            {i < products.length - 1 ? "; " : ". "}
+          </span>
+        ))}
+        {INPUT_LABELS[biggest]} has the biggest say right now
+        {products[biggest] < 0 ? ", and it's voting against the umbrella" : ""}.
+      </li>
+      <li>
+        <strong>Add them up, plus the bias.</strong> {products.map((p) => fmt(p)).join(" + ")} + {fmt(bias, 1)} ={" "}
+        <span className="font-mono font-semibold">z = {fmt(weightedSum)}</span>. The bias is a head start (or a
+        handicap) that doesn&apos;t depend on any input.
+      </li>
+      <li>
+        <strong>Squash with the activation.</strong> {actLabel}({fmt(weightedSum)}) ={" "}
+        <span className="font-mono font-semibold">{fmt(output, 3)}</span>. That&apos;s the dot on the curve above.
+      </li>
+      <li>
+        <strong>Decide.</strong> z is {weightedSum > 0 ? "above" : "at or below"} 0, so the neuron says{" "}
+        <strong>{bringUmbrella ? "bring the umbrella" : "leave it at home"}</strong>. Try dragging the bias until it flips.
+      </li>
+    </ol>
   );
 }
