@@ -1224,5 +1224,14 @@ In professional engineering, choosing a framework is documented as an **Architec
 
 ---
 
+### 8.5 Prove a "No Visual Change" Refactor With Pixel Baselines
+* **Phase:** Cleanup (Batch 4)
+* **The Problem:** replacing five hand-written page headers and concept grids with shared components should change *nothing* on screen, but functional tests can't see a wrong colour, spacing or icon. "Looks the same" by eye is a guess.
+* **The Pattern:** before touching the code, a temporary Playwright spec takes `toHaveScreenshot()` of each block (5 pages × header + concepts × light + dark = 20 images) with `--update-snapshots`. Run it **twice** first to prove the baseline is stable (no animation mid-frame). Refactor, re-run: Playwright's default fails on any differing pixel. Then delete the spec and its snapshots.
+* **What it caught by design:** Boundary's badge icon (`Grid`) differed from its `SECTIONS_NAV` icon (`Sliders`). Deriving the icon blindly would have changed the page, so `SectionHeader` briefly got an `icon` override and the mismatch became a question for a human instead of a silent change. Once decided (`Grid`), the fix was one line in `SECTIONS_NAV` and the override was deleted: the SSOT now makes the header menu, Home cards, About list and page badge agree by construction.
+* **Pairs with 4.27:** the shared components take an accent *name* and look up complete class strings in `SECTION_ACCENTS`, because Tailwind can't see `bg-${accent}-100`. The pixel diff would have caught that mistake too: missing CSS = different pixels.
+
+---
+
 *(This document is continuously updated as new features, architectural patterns, and engineering lessons are introduced.)*
 

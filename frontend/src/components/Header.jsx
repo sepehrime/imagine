@@ -11,20 +11,22 @@ import {
   BookOpen,
   Info,
   CircleDot,
-  Sliders,
+  Grid,
   Play,
   Activity,
   Layers,
 } from "lucide-react";
 
 /**
- * Single Source of Truth for the 5 curriculum sections.
+ * Single Source of Truth for the 5 curriculum sections: id, title, route,
+ * icon, short description and accent colour.
  */
 export const SECTIONS_NAV = [
   {
     id: 1,
     title: "1. What is a Neuron?",
     path: "/neuron",
+    accent: "blue", // key into SECTION_ACCENTS (utils/sectionAccents.js)
     icon: CircleDot,
     desc: "Inputs, weights, bias & activations",
   },
@@ -32,6 +34,7 @@ export const SECTIONS_NAV = [
     id: 2,
     title: "2. Build the Network",
     path: "/build",
+    accent: "indigo",
     icon: Layers,
     desc: "Connect layers & customize architecture",
   },
@@ -39,6 +42,7 @@ export const SECTIONS_NAV = [
     id: 3,
     title: "3. Forward Pass",
     path: "/forward-pass",
+    accent: "cyan",
     icon: Play,
     desc: "Watch numbers flow node-to-node",
   },
@@ -46,6 +50,7 @@ export const SECTIONS_NAV = [
     id: 4,
     title: "4. Train & Watch it Learn",
     path: "/train",
+    accent: "emerald",
     icon: Activity,
     desc: "Loss curves, backpropagation & epochs",
   },
@@ -53,7 +58,8 @@ export const SECTIONS_NAV = [
     id: 5,
     title: "5. Decision Boundary",
     path: "/boundary",
-    icon: Sliders,
+    accent: "violet",
+    icon: Grid,
     desc: "See how the network classifies 2D space",
   },
 ];

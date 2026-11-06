@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SectionNavFooter from "../components/SectionNavFooter";
 import KeyTakeaway from "../components/KeyTakeaway";
+import SectionHeader from "../components/SectionHeader";
 import GlossaryTerm from "../components/GlossaryTerm";
 import Tooltip from "../components/Tooltip";
 import SliderControl from "../components/SliderControl";
@@ -17,7 +18,7 @@ import {
   fmt,
   outputToGlow,
 } from "../utils/neuronMath";
-import { CircleDot, HelpCircle, RotateCcw, Umbrella, Calculator } from "lucide-react";
+import { HelpCircle, RotateCcw, Umbrella, Calculator } from "lucide-react";
 
 /**
  * Neuron Page (Section 1)
@@ -104,44 +105,27 @@ export default function Neuron() {
   return (
     <div className="space-y-10">
       {/* Section Header */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 text-xs font-bold uppercase tracking-wider">
-            <CircleDot className="w-3.5 h-3.5" />
-            Section 1 of 5
-          </div>
-          {isCompleted(sectionId) && (
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              ● Completed
-            </span>
-          )}
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          What is a Neuron?
-        </h1>
-        <p className="text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          The basic building block of any neural network. Learn how inputs are scaled by{" "}
-          <GlossaryTerm
-            term="Weights"
-          >
-            weights
-          </GlossaryTerm>
-          , shifted by a{" "}
-          <GlossaryTerm
-            term="Bias"
-          >
-            bias
-          </GlossaryTerm>
-          , and squashed through an{" "}
-          <GlossaryTerm
-            term="Activation Function"
-          >
-            activation function
-          </GlossaryTerm>
-          .
-        </p>
-      </div>
+      <SectionHeader sectionId={sectionId} title="What is a Neuron?">
+        The basic building block of any neural network. Learn how inputs are scaled by{" "}
+        <GlossaryTerm
+          term="Weights"
+        >
+          weights
+        </GlossaryTerm>
+        , shifted by a{" "}
+        <GlossaryTerm
+          term="Bias"
+        >
+          bias
+        </GlossaryTerm>
+        , and squashed through an{" "}
+        <GlossaryTerm
+          term="Activation Function"
+        >
+          activation function
+        </GlossaryTerm>
+        .
+      </SectionHeader>
 
       {/* Concept Explainer: the 4 steps, matching left → right in the diagram */}
       <div className="rounded-3xl p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">

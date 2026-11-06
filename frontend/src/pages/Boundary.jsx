@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import SectionNavFooter from "../components/SectionNavFooter";
 import KeyTakeaway from "../components/KeyTakeaway";
+import SectionHeader from "../components/SectionHeader";
+import ConceptGrid from "../components/ConceptGrid";
 import GlossaryTerm from "../components/GlossaryTerm";
 import SliderControl from "../components/SliderControl";
 import LoadingSpinner from "../components/LoadingSpinner";
@@ -135,51 +137,19 @@ export default function Boundary() {
   return (
     <div className="space-y-10">
       {/* Header */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-100 text-violet-800 dark:bg-violet-950/60 dark:text-violet-300 text-xs font-bold uppercase tracking-wider">
-            <Grid className="w-3.5 h-3.5" />
-            Section 5 of 5
-          </div>
-          {isCompleted(sectionId) && (
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              ● Completed
-            </span>
-          )}
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Decision Boundary
-        </h1>
-        <p className="text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          What has the network actually learned? Colour the whole map by its answers and you can see
-          the{" "}
-          <GlossaryTerm
-            term="Decision Boundary"
-          >
-            decision boundary
-          </GlossaryTerm>{" "}
-          it drew to separate the classes.
-        </p>
-      </div>
+      <SectionHeader sectionId={sectionId} title="Decision Boundary">
+        What has the network actually learned? Colour the whole map by its answers and you can see
+        the{" "}
+        <GlossaryTerm
+          term="Decision Boundary"
+        >
+          decision boundary
+        </GlossaryTerm>{" "}
+        it drew to separate the classes.
+      </SectionHeader>
 
       {/* Concept Explainer */}
-      <div className="grid md:grid-cols-3 gap-4">
-        {CONCEPTS.map(({ icon: Icon, title, text }) => (
-          <div
-            key={title}
-            className="rounded-3xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 flex items-center justify-center">
-                <Icon className="w-4 h-4" />
-              </div>
-              <h2 className="font-bold text-slate-900 dark:text-white">{title}</h2>
-            </div>
-            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{text}</p>
-          </div>
-        ))}
-      </div>
+      <ConceptGrid sectionId={sectionId} concepts={CONCEPTS} />
 
       {/* Main panel */}
       <div className="rounded-3xl p-5 sm:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">

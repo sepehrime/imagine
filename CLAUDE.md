@@ -31,7 +31,7 @@ Tests:
 
 **Frontend app shell.** `App.jsx` sets up `BrowserRouter` → `ScrollToTop` → `ThemeProvider` → `ProgressProvider` → `MotionConfig reducedMotion="user"` → `MainLayout` (persistent Header/Footer, `BackendStatusBanner`, `PageTransition`, `Celebration` confetti, shared `max-w-7xl` container) → `Routes`. Pages in `src/pages/` should not re-add page-level padding/containers.
 
-**Section navigation is data-driven.** `SECTIONS_NAV` exported from `src/components/Header.jsx` is the single source of truth for the five sections (id 1–5, title, path, icon, desc). Header links, `SectionNavFooter` prev/next buttons, and section cards all derive from it — change section order/titles there, not in individual pages. Each section page renders `<SectionNavFooter currentSectionId={n} />`.
+**Section navigation is data-driven.** `SECTIONS_NAV` exported from `src/components/Header.jsx` is the single source of truth for the five sections (id 1–5, title, path, icon, desc, accent). Header links, `SectionNavFooter` prev/next buttons, section cards, and each page's `<SectionHeader>` badge ("Section N of 5", icon, colour) all derive from it — change section order/titles there, not in individual pages. `accent` is a key into `src/utils/sectionAccents.js`, which holds complete Tailwind class strings (never build class names at runtime). Each section page renders `<SectionHeader sectionId={n} …>`, `<ConceptGrid>` where it has concept cards, and `<SectionNavFooter currentSectionId={n} />`.
 
 **Shared client state.**
 - Theme: `src/context/ThemeContext.jsx` (`useTheme()`), persisted to `localStorage["theme"]`, toggles the `dark` class on `<html>`; Tailwind uses `darkMode: "class"`, so always pair light styles with `dark:` variants.

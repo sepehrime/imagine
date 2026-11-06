@@ -2,6 +2,8 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SectionNavFooter from "../components/SectionNavFooter";
 import KeyTakeaway from "../components/KeyTakeaway";
+import SectionHeader from "../components/SectionHeader";
+import ConceptGrid from "../components/ConceptGrid";
 import GlossaryTerm from "../components/GlossaryTerm";
 import Tooltip from "../components/Tooltip";
 import SliderControl from "../components/SliderControl";
@@ -27,6 +29,39 @@ import {
   Target,
   AlertTriangle,
 } from "lucide-react";
+
+const CONCEPTS = [
+  {
+    icon: ArrowRight,
+    title: "Input → output",
+    text: (
+      <>
+        A forward pass takes the input values and pushes them through each layer in turn. Each layer&rsquo;s outputs
+        become the next layer&rsquo;s inputs.
+      </>
+    ),
+  },
+  {
+    icon: Zap,
+    title: "Every prediction",
+    text: (
+      <>
+        Whenever an AI recognises a photo or suggests a word, it&rsquo;s running a forward pass, just with millions of
+        neurons instead of a few dozen.
+      </>
+    ),
+  },
+  {
+    icon: AlertTriangle,
+    title: "Not trained yet",
+    text: (
+      <>
+        These weights are random, so the answer is meaningless for now. Watch <em>how</em> the numbers flow; Section 4
+        is where the network learns.
+      </>
+    ),
+  },
+];
 
 /**
  * ForwardPass Page (Section 3)
@@ -157,49 +192,19 @@ export default function ForwardPass() {
   return (
     <div className="space-y-10">
       {/* Header */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 text-xs font-bold uppercase tracking-wider">
-            <Play className="w-3.5 h-3.5" />
-            Section 3 of 5
-          </div>
-          {isCompleted(sectionId) && (
-            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
-              ● Completed
-            </span>
-          )}
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          The Forward Pass
-        </h1>
-        <p className="text-base text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          Feed numbers in on the left and watch them flow, layer by layer, until a prediction comes
-          out on the right. This is the{" "}
-          <GlossaryTerm
-            term="Forward Pass"
-          >
-            forward pass
-          </GlossaryTerm>
-          .
-        </p>
-      </div>
+      <SectionHeader sectionId={sectionId} title="The Forward Pass">
+        Feed numbers in on the left and watch them flow, layer by layer, until a prediction comes
+        out on the right. This is the{" "}
+        <GlossaryTerm
+          term="Forward Pass"
+        >
+          forward pass
+        </GlossaryTerm>
+        .
+      </SectionHeader>
 
       {/* Concept Explainer */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <ConceptCard icon={ArrowRight} title="Input → output">
-          A forward pass takes the input values and pushes them through each layer in turn. Each
-          layer&rsquo;s outputs become the next layer&rsquo;s inputs.
-        </ConceptCard>
-        <ConceptCard icon={Zap} title="Every prediction">
-          Whenever an AI recognises a photo or suggests a word, it&rsquo;s running a forward pass,
-          just with millions of neurons instead of a few dozen.
-        </ConceptCard>
-        <ConceptCard icon={AlertTriangle} title="Not trained yet">
-          These weights are random, so the answer is meaningless for now. Watch <em>how</em> the
-          numbers flow; Section 4 is where the network learns.
-        </ConceptCard>
-      </div>
+      <ConceptGrid sectionId={sectionId} concepts={CONCEPTS} />
 
       {/* Simulator */}
       <div className="rounded-3xl p-5 sm:p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
@@ -407,20 +412,6 @@ export default function ForwardPass() {
 
       {/* Pagination */}
       <SectionNavFooter currentSectionId={sectionId} />
-    </div>
-  );
-}
-
-function ConceptCard({ icon: Icon, title, children }) {
-  return (
-    <div className="rounded-3xl p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-      <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-xl bg-cyan-50 dark:bg-cyan-950/50 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
-          <Icon className="w-4 h-4" />
-        </div>
-        <h2 className="font-bold text-slate-900 dark:text-white">{title}</h2>
-      </div>
-      <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{children}</p>
     </div>
   );
 }
