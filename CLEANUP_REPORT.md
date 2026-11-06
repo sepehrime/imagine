@@ -140,7 +140,7 @@ The codebase is already lean. knip found **1** unused export across 95 frontend 
 ## Batches (each one commit, safest first)
 
 1. ✅ **Applied:** **Frontend dead code** (F4, F5, F7, F8). No behaviour change. Verify: `npm run lint && npm test && npm run build && npm run test:e2e`. Result: 6 files, −60/+14 lines; lint exit 0, 31 unit + 31 e2e pass, knip reports 0 unused exports.
-2. **Backend dead code and legacy name** (F9, F10, F6). Verify: `python -m pytest`, then `npm run test:e2e`.
+2. ✅ **Applied:** **Backend dead code and legacy name** (F9, F10, F6). Verify: `python -m pytest`, then `npm run test:e2e`. Result: 49 backend + 31 e2e pass; `/health` now returns `"service": "inside-the-network-backend"`.
 3. **Remove unused Python dependencies** (F1, adding `httpx2` to dev deps). Verify in a **fresh venv**, then e2e.
 4. **Shared `SectionHeader` + `ConceptCard`** (F2, F3). The largest change, visual only. Verify: full test suite + light/dark screenshots of all 5 sections.
 

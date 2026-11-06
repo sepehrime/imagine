@@ -38,7 +38,6 @@ class ConfigurableNetwork(nn.Module):
             raise ValueError(f"Unknown activation '{activation}'.")
 
         self.layer_sizes = list(layer_sizes)
-        self.activation_name = activation
         self.hidden_activation = HIDDEN_ACTIVATIONS[activation]()
         self.linears = nn.ModuleList(
             nn.Linear(n_in, n_out) for n_in, n_out in zip(layer_sizes[:-1], layer_sizes[1:])

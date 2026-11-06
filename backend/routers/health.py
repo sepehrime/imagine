@@ -6,7 +6,7 @@ from schemas.health import HealthResponse
 
 router = APIRouter(tags=["System"])
 
-SERVICE_NAME = "how-ai-works-backend"
+SERVICE_NAME = "inside-the-network-backend"
 VERSION = "0.1.0"
 
 
