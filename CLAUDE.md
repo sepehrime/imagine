@@ -29,13 +29,13 @@ Tests:
 
 **Backend layout.** `main.py` only wires logging, CORS and routers. `routers/` (one per section, HTTP only), `schemas/` (Pydantic request/response models; docstrings and `Field` descriptions feed `/docs`), `models/network.py` (`ConfigurableNetwork`), `utils/` (`trainer.py` training loop, `datasets.py`, `boundary.py`), and `state.py` holding a global `AppState` so a model trained in Section 4 (`/api/train/*`, runs in a background thread, frontend polls status) is reused by Section 5 (`/api/boundary/*`). Keep CPU-heavy ML work off the async event loop: PyTorch handlers are plain `def`. `TRAINING_TARGET_SECONDS` (default 8) sets how long a paced training run takes; tests set it to 0 or 2.
 
-**Frontend app shell.** `App.jsx` sets up `BrowserRouter` → `ScrollToTop` → `ThemeProvider` → `MainLayout` (persistent Header/Footer, shared `max-w-7xl` container) → `Routes`. Pages in `src/pages/` should not re-add page-level padding/containers.
+**Frontend app shell.** `App.jsx` sets up `BrowserRouter` → `ScrollToTop` → `ThemeProvider` → `ProgressProvider` → `MotionConfig reducedMotion="user"` → `MainLayout` (persistent Header/Footer, `BackendStatusBanner`, `PageTransition`, `Celebration` confetti, shared `max-w-7xl` container) → `Routes`. Pages in `src/pages/` should not re-add page-level padding/containers.
 
 **Section navigation is data-driven.** `SECTIONS_NAV` exported from `src/components/Header.jsx` is the single source of truth for the five sections (id 1–5, title, path, icon, desc). Header links, `SectionNavFooter` prev/next buttons, and section cards all derive from it — change section order/titles there, not in individual pages. Each section page renders `<SectionNavFooter currentSectionId={n} />`.
 
 **Shared client state.**
 - Theme: `src/context/ThemeContext.jsx` (`useTheme()`), persisted to `localStorage["theme"]`, toggles the `dark` class on `<html>`; Tailwind uses `darkMode: "class"`, so always pair light styles with `dark:` variants.
-- Progress: `src/hooks/useProgress.js`, persisted to `localStorage["inside_network_progress"]` as an array of completed section ids, synced across tabs via the `storage` event. `TOTAL_SECTIONS` is hardcoded to 5 there — keep it in sync with `SECTIONS_NAV`.
+- Progress: `src/hooks/useProgress.js` holds the store (`useProgressStore`, called once by `<ProgressProvider>` in `src/context/ProgressContext.jsx`); components call `useProgress()`, which reads the context, so every component shares one state. Persisted to `localStorage["inside_network_progress"]` as an array of completed section ids, synced across tabs via the `storage` event. `TOTAL_SECTIONS` is hardcoded to 5 there — keep it in sync with `SECTIONS_NAV`.
 
 Available frontend libs for visualizations: `framer-motion` (animation), `d3` (network graphs), `recharts` (loss/confidence charts), `axios` (API calls), `lucide-react` (icons).
 

@@ -113,7 +113,7 @@ npm run dev
 
 Open **http://localhost:5173**. Keep both terminals running: Vite forwards every `/api/...` request to the backend on port 8000.
 
-> **Backend not running?** Sections 1 and 2 still work, since they run entirely in the browser. Sections 3–5 show a "Can't reach the backend" message with the command to start it.
+> **Backend not running?** Sections 1 and 2 still work, since they run entirely in the browser. A banner under the header says the backend is offline (with the command to start it) and disappears on its own once the server is up; Sections 3–5 also show a "Can't reach the backend" message with a retry button.
 
 ---
 
@@ -157,13 +157,14 @@ To refresh the README screenshots after UI changes, start both dev servers and r
 ├── frontend/                    React 19 + Vite + Tailwind
 │   ├── src/
 │   │   ├── App.jsx              Router and providers
-│   │   ├── layouts/             MainLayout: header, footer, page container
+│   │   ├── layouts/             MainLayout: header, footer, offline banner, page transition, confetti
 │   │   ├── pages/               One page per route (the five sections, Home, Glossary, About, 404)
 │   │   ├── components/          Shared UI, plus one folder per section's visualizations
 │   │   │   ├── neuron/  build/  forward/  train/  boundary/
 │   │   │   └── Header.jsx       Also exports SECTIONS_NAV, the single list of sections
-│   │   ├── hooks/               useProgress, useArchitecture, useTraining, useBoundaryGrid
-│   │   ├── context/             ThemeContext (dark/light mode)
+│   │   ├── hooks/               useProgress, useArchitecture, useTraining, useBoundaryGrid,
+│   │   │                        useBackendHealth, useCelebrationTrigger
+│   │   ├── context/             ThemeContext (dark/light mode), ProgressContext (one shared progress store)
 │   │   ├── api/client.js        Every backend call, in one place
 │   │   ├── utils/               Pure functions (neuron maths, network layout, …) + unit tests
 │   │   └── data/glossary.js     Glossary content, shared by the Glossary page and inline tooltips

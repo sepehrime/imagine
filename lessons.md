@@ -1187,5 +1187,32 @@ In professional engineering, choosing a framework is documented as an **Architec
 
 ---
 
+## 8. Definition of Done (Final Verification)
+
+### 8.1 A Bare `.gitignore` Pattern Matches Everywhere (Debugging Lesson)
+* **Phase:** Definition of Done
+* **Symptom:** a fresh `git clone` failed to start: Vite couldn't resolve `../components/build/NetworkDiagram`. Every test passed on the author's machine.
+* **Root Cause:** the Python `.gitignore` template's `build/` (meant for packaging output) has no leading path, so it matches a folder named `build` at **any** depth, including `frontend/src/components/build/`. Git silently never tracked Section 2's diagram. `git check-ignore -v <file>` names the exact rule and line.
+* **The Fix:** anchor template rules to where they belong: `backend/build/`, `backend/lib/`. (A leading `/` anchors to the repo root; a bare name floats.)
+* **Rule:** after adding a folder whose name is common (`build`, `lib`, `dist`, `out`, `env`), run `git status --ignored` to check it isn't being swallowed.
+
+---
+
+### 8.2 "Works on My Machine" Is Not Evidence: Verify From a Fresh Clone
+* **Phase:** Definition of Done
+* **The Problem:** a working copy hides missing files, stale local installs, and untracked config. Every test can pass while the repo itself is broken (see 8.1).
+* **The Pattern:** `git clone` the repo into a temp folder and follow the README *literally*: create the venv, `pip install`, `npm install`, start both servers, then run the full test suites **from the clone**. Use different ports if your own dev servers are running (`vite.config.js` already reads `API_TARGET`).
+* **What it proved:** the README steps work on Python 3.14 / Node 24, all 49 backend + 31 unit + 31 E2E tests pass from scratch, and exactly one file was missing.
+
+---
+
+### 8.3 Scope Lint Rules to the Code They're About
+* **Phase:** Definition of Done
+* **Symptom:** `npm run lint` exited 1 because `react/rules-of-hooks` flagged `e2e/fixtures.js`. Playwright's fixture callback is conventionally named `use`, the same name as React 19's `use()` hook.
+* **The Fix:** an `overrides` block in `.oxlintrc.json` turns that rule off for `e2e/**` only, so it stays an error for real React code. Better than renaming Playwright's documented parameter, and better than a global "off".
+* **Rule:** a lint command that always fails gets ignored, and then it stops catching real bugs. Keep it at exit 0, and treat each remaining warning as a deliberate, documented choice (here: `Header.jsx` exporting `SECTIONS_NAV`, the documented single source of truth).
+
+---
+
 *(This document is continuously updated as new features, architectural patterns, and engineering lessons are introduced.)*
 

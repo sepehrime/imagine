@@ -436,9 +436,9 @@ Python (FastAPI) backend.
 ## ✅ Definition of Done
 
 The project is complete when:
-- [ ] All 5 sections are fully implemented with explainer + interactive demo + takeaway
-- [ ] All backend API endpoints are working and tested
-- [ ] The app runs locally with one command per terminal
-- [ ] Dark mode, progress tracking, and responsive layout work correctly
-- [ ] The Glossary and About pages are complete
-- [ ] The README allows a new developer to set up and run the project from scratch
+- [x] All 5 sections are fully implemented with explainer + interactive demo + takeaway
+- [x] All backend API endpoints are working and tested
+- [x] The app runs locally with one command per terminal
+- [x] Dark mode, progress tracking, and responsive layout work correctly
+- [x] The Glossary and About pages are complete
+- [x] The README allows a new developer to set up and run the project from scratch

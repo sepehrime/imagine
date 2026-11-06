@@ -17,6 +17,9 @@ import { SECTIONS_NAV } from "./Header";
  * 3. Safe External Links: the Swagger link opens in a new tab with
  *    `rel="noopener noreferrer"` (see lessons 3.28).
  */
+// Computed once at load, not on every render (keeps render pure)
+const YEAR = new Date().getFullYear();
+
 export default function Footer() {
   return (
     <footer className="w-full border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 transition-colors duration-200 mt-auto">
@@ -104,7 +107,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-slate-200/80 dark:border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500 dark:text-slate-400">
-          <p>© {new Date().getFullYear()} Inside the Network. Educational AI Visualizer.</p>
+          <p>© {YEAR} Inside the Network. Educational AI Visualizer.</p>
           <p className="flex items-center gap-1">
             Built with React, Vite, Tailwind CSS, and FastAPI
           </p>

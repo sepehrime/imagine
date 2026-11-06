@@ -396,6 +396,13 @@ export default function Neuron() {
   );
 }
 
+// "1.20 + 0.48 − 0.18 − 0.50": write negatives as subtraction, not "+ -0.18"
+function signedSum(values) {
+  return values
+    .map((v, i) => (i === 0 ? fmt(v) : `${v < 0 ? "−" : "+"} ${fmt(Math.abs(v))}`))
+    .join(" ");
+}
+
 // "Explain this step" for Section 1: the neuron's calculation with the live numbers
 function NeuronWalkthrough({ inputs, weights, bias, weightedSum, output, actLabel, bringUmbrella }) {
   const products = inputs.map((x, i) => weights[i] * x);
@@ -414,7 +421,7 @@ function NeuronWalkthrough({ inputs, weights, bias, weightedSum, output, actLabe
         {products[biggest] < 0 ? ", and it's voting against the umbrella" : ""}.
       </li>
       <li>
-        <strong>Add them up, plus the bias.</strong> {products.map((p) => fmt(p)).join(" + ")} + {fmt(bias, 1)} ={" "}
+        <strong>Add them up, plus the bias.</strong> {signedSum([...products, bias])} ={" "}
         <span className="font-mono font-semibold">z = {fmt(weightedSum)}</span>. The bias is a head start (or a
         handicap) that doesn&apos;t depend on any input.
       </li>
