@@ -49,7 +49,7 @@ Python (FastAPI) backend.
   - [x] `numpy` — numerical computation
   - [x] `scikit-learn` — dataset generation and preprocessing
   - [x] `pydantic` — request/response validation
-  - [x] `python-multipart` — form data support
+  - [x] `python-multipart` — form data support (removed in the cleanup: no endpoint takes form data)
 - [x] Install all requirements: `pip install -r requirements.txt`
 - [x] Create `main.py` as the FastAPI entry point
 - [x] Configure CORS middleware to allow requests from `localhost:5173`

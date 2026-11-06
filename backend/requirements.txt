@@ -2,11 +2,5 @@ fastapi
 uvicorn[standard]
 scikit-learn
 torch
-torchvision
-transformers
-tokenizers
-Pillow
 numpy
-matplotlib
-python-multipart
 pydantic

@@ -1100,7 +1100,7 @@ In professional engineering, choosing a framework is documented as an **Architec
   * Folder tree → `ls` the real directories.
   * Prerequisites → read them from the tools (`vite`'s `engines.node` is `^20.19.0 || >=22.12.0`, so "Node 18+" was wrong).
   * "Works without the backend" → `grep` which pages import `api/client` (only Sections 3–5 do).
-  * Dependencies → `grep` for imports. Six packages in `requirements.txt` (`transformers`, `torchvision`, …) are never imported, which makes setup much slower than it needs to be.
+  * Dependencies → `grep` for imports. Six packages in `requirements.txt` (`transformers`, `torchvision`, …) were never imported, which made setup much slower than it needed to be. (Removed in the cleanup, see 8.4.)
 * **Rule:** update the docs in the same change as the code. The tests in 5.x catch code drift; for docs, only review catches it.
 
 ---
@@ -1211,6 +1211,16 @@ In professional engineering, choosing a framework is documented as an **Architec
 * **Symptom:** `npm run lint` exited 1 because `react/rules-of-hooks` flagged `e2e/fixtures.js`. Playwright's fixture callback is conventionally named `use`, the same name as React 19's `use()` hook.
 * **The Fix:** an `overrides` block in `.oxlintrc.json` turns that rule off for `e2e/**` only, so it stays an error for real React code. Better than renaming Playwright's documented parameter, and better than a global "off".
 * **Rule:** a lint command that always fails gets ignored, and then it stops catching real bugs. Keep it at exit 0, and treat each remaining warning as a deliberate, documented choice (here: `Header.jsx` exporting `SECTIONS_NAV`, the documented single source of truth).
+
+---
+
+### 8.4 Removing a Dependency Can Remove Its Dependencies Too
+* **Phase:** Cleanup (Batch 3)
+* **The Trap:** six packages in `requirements.txt` had zero imports, so they looked safe to delete. But FastAPI's `TestClient` needs `httpx2`, and the *only* thing installing it was `huggingface_hub`, pulled in by the unused `transformers`. Deleting the six lines would have broken all 49 backend tests with an `ImportError`, and only on a fresh install; the existing venv would still have it and pass.
+* **How to find these:** compare `pip list` before and after, or read the error a tool gives (`starlette.testclient` names `httpx2` explicitly). `pip show <pkg>` shows `Required-by:`; when the only users are packages you're removing, it needs its own line.
+* **The Fix:** declare what you actually use. `httpx2` is now in `requirements-dev.txt` with a comment saying why.
+* **Verify in a NEW environment:** the old venv still contains everything, so it can't show a missing dependency. A fresh venv + `pip install -r requirements-dev.txt` + the full test suite (including E2E against that venv) is the only real check.
+* **Side lesson: unpinned versions drift.** The fresh install chose torch 2.15 (635 MB) where the old venv has 2.10 (402 MB). The ~240 MB saved was hidden by torch growing on its own. With no version pins, two developers following the same README can get different libraries.
 
 ---
 

@@ -1,2 +1,5 @@
 -r requirements.txt
 pytest
+# FastAPI's TestClient needs this HTTP client. It used to arrive by accident
+# through `transformers` (unused, removed), so it's listed explicitly now.
+httpx2
